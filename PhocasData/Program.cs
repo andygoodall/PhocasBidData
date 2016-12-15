@@ -25,6 +25,8 @@ namespace PhocasData
 
         static string csvDataPath = "C:\\Phocas\\Rawdata\\";
 
+        static string vehiclestats = "";
+
         /**
          * Created on 02/11/2016.
          * Reads various AMS database tables and exports then as .csv files for Phocas
@@ -39,6 +41,107 @@ namespace PhocasData
 
             Console.WriteLine("Beginning data extract at " + start);
             log.Info("Beginning data extract at " + start);
+
+            vehiclestats = " CASE  "; 
+            vehiclestats += "WHEN mileage <= 1000 then 'Up to 1000' ";
+            vehiclestats += "WHEN mileage > 1000 and mileage <= 5000 then 'Up to 5,000' ";
+            vehiclestats += "WHEN mileage > 5000 and mileage <= 10000 then 'Up to 10,000' ";
+            vehiclestats += "WHEN mileage > 10000 and mileage <= 20000 then 'Up to 20,000' ";
+            vehiclestats += "WHEN mileage > 20000 and mileage <= 30000 then 'Up to 30,000' ";
+            vehiclestats += "WHEN mileage > 30000 and mileage <= 40000 then 'Up to 40,000' ";
+            vehiclestats += "WHEN mileage > 40000 and mileage <= 50000 then 'Up to 50,000' ";
+            vehiclestats += "WHEN mileage > 50000 and mileage <= 60000 then 'Up to 60,000' ";
+            vehiclestats += "WHEN mileage > 60000 and mileage <= 70000 then 'Up to 70,000' ";
+            vehiclestats += "WHEN mileage > 70000 and mileage <= 80000 then 'Up to 80,000' ";
+            vehiclestats += "WHEN mileage > 80000 and mileage <= 90000 then 'Up to 90,000' ";
+            vehiclestats += "WHEN mileage > 90000 and mileage <= 100000 then 'Up to 100,000' ";
+            vehiclestats += "ELSE 'Over 100,000' ";
+            vehiclestats += "END as Mileage_Cat, ";
+            vehiclestats += "CASE  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '1 Year' and NOW() then 'Up to 1 year'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '2 Year' and NOW() then 'Up to 2 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '3 Year' and NOW() then 'Up to 3 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '4 Year' and NOW() then 'U to 4 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '5 Year' and NOW() then 'Up to 5 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '6 Year' and NOW() then 'Up to 6 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '7 Year' and NOW() then 'Up to 7 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '8 Year' and NOW() then 'Up to 8 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '9 Year' and NOW() then 'Up to 9 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '10 Year' and NOW() then 'Up to 10 years'  ";
+            vehiclestats += "ELSE 'Over 10 year' ";
+            vehiclestats += "End as Age_cat, ";
+            vehiclestats += "CASE  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '2.5 Year' and NOW() then 'Late & Low'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '4.5 Year' and NOW() then 'Fleet Profile'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '6.5 Year' and NOW() then 'PX Young'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '10.5 Year' and NOW() then 'PX old'  ";
+            vehiclestats += "ELSE 'Budget' ";
+            vehiclestats += "End as Industry_Age_cat, ";
+            vehiclestats += "CASE ";
+            vehiclestats += "WHEN bodystyle like '%Cabriolet%' or bodystyle like '%CABRIOLET%' then 'Cabriolet' ";
+            vehiclestats += "WHEN bodystyle like '%Convertible%' or bodystyle like '%CONVERTIBLE%' then 'Convertible' ";
+            vehiclestats += "WHEN bodystyle like '%Coupe%' or bodystyle like '%CABRIOLET%' then 'Coupe' ";
+            vehiclestats += "WHEN bodystyle = 'Double Cab Pick-up' or bodystyle = 'Double Cab Dropside' or bodystyle = 'Double Cab Tipper' or bodystyle = 'Double Chassis Cab' then 'Double Cab Pick-up' ";
+            vehiclestats += "WHEN bodystyle like '%Estate%' or bodystyle like '%ESTATE%' then 'Estate' ";
+            vehiclestats += "WHEN bodystyle like '%Hardtop%' then 'Cabriolet' ";
+            vehiclestats += "WHEN bodystyle like '%Hatchback%' or bodystyle like '%HATCHBACK%' then 'Hatchback' ";
+            vehiclestats += "WHEN bodystyle like '%High Volume/High Roof Van%' then 'High Volume/High Roof Van' ";
+            vehiclestats += "WHEN bodystyle = 'Medium Roof Van' then 'Medium Roof Van' ";
+            vehiclestats += "WHEN bodystyle like '%Roadster%' then 'Roadster' ";
+            vehiclestats += "WHEN bodystyle like '%Saloon%' or bodystyle like '%SALOON%' then 'Saloon' ";
+            vehiclestats += "WHEN bodystyle like '%Station Wagon%' then 'Station Wagon' ";
+            vehiclestats += "WHEN bodystyle like '%Van%' then 'Van' ";
+            vehiclestats += "ELSE 'Others' ";
+            vehiclestats += "END AS BodyStyle, ";
+            vehiclestats += "CASE ";
+            vehiclestats += "WHEN enginesizecc is null then 'Unknown' ";
+            vehiclestats += "WHEN enginesizecc between 0 and 999 then 'Less than 1.0L' ";
+            vehiclestats += "WHEN enginesizecc between 1000 and 1399 then '1.0L - 1.3L' ";
+            vehiclestats += "WHEN enginesizecc between 1400 and 1699 then '1.4L - 1.6L' ";
+            vehiclestats += "WHEN enginesizecc between 1700 and 1999 then '1.7L - 1.9L' ";
+            vehiclestats += "WHEN enginesizecc between 2000 and 2599 then '2.0L - 2.5L' ";
+            vehiclestats += "WHEN enginesizecc between 2600 and 2999 then '2.6L - 2.9L' ";
+            vehiclestats += "WHEN enginesizecc between 3000 and 3999 then '3.0L - 3.9L' ";
+            vehiclestats += "WHEN enginesizecc between 4000 and 4999 then '4.0L - 4.9L' ";
+            vehiclestats += "ELSE '5.0L' ";
+            vehiclestats += "END AS Engine_Size_cat, ";
+            vehiclestats += "CASE 		 ";
+            vehiclestats += "when vehicle.colour is null then 'Not Specified'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%black%' then 'Black'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%white%' then 'White'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%silver%' then 'Silver'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%red%' then 'Red'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%blue%' then 'Blue'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%green%' then 'Green'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%yellow%' then 'Yellow'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%gold%' then 'Gold'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%bronze%' then 'Bronze' ";
+            vehiclestats += "when lower(vehicle.colour) like '%purple%' then 'Purple'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%magenta%' then 'Magenta'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%grey%' then 'Grey'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%brown%' then 'Brown'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%beige%' then 'Beige'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%fire%' then 'Red'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%anthracite%' then 'Silver'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%cream%' then 'Cream'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%maroon%' then 'Maroon'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%violet%' then 'Violet'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%mauve%' then 'Mauve'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%orange%' then 'Orange'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%turquoise%' then 'Turquoise'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%platinum%' then 'Silver'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%graphite%' then 'Grey'   ";
+            vehiclestats += "when lower(vehicle.colour) like '%venetian%' then 'Red'   ";
+            vehiclestats += "when lower(vehicle.colour) like '%ruby%' then 'Red'   ";
+            vehiclestats += "when lower(vehicle.colour) like '%multi%' then 'Multi-Coloured'   ";
+            vehiclestats += "when lower(vehicle.colour) like '%pink%' then 'Pink' else 'Other'   ";
+            vehiclestats += "END AS vehicle_standard_colour,  ";
+            vehiclestats += "CASE  ";
+            vehiclestats += "WHEN sale.site_id = 1 THEN 'AB Chelmsford' ";
+            vehiclestats += "WHEN sale.site_id = 659779 THEN 'AB Press Heath' ";
+            vehiclestats += "WHEN sale.site_id= 659780 THEN 'AB Westbury' ";
+            vehiclestats += "ELSE 'AB Leeds' ";
+            vehiclestats += "END AS Site_Location, ";
 
             // Generate Site CSV
             GetSiteCSV();
@@ -83,6 +186,9 @@ namespace PhocasData
 
             // Generate Transport Records CSV
             GetTransportRecordsCSV();
+
+            // Generate Transport Records CSV
+            GetOnSiteRecordsCSV();
 
             DateTime end = DateTime.Now;
             Console.WriteLine("Completed data extract " + end);
@@ -898,107 +1004,6 @@ namespace PhocasData
                 conn.Open();
                 string sql = null;
 
-                sql = " CASE  ";
-                sql += "WHEN mileage <= 1000 then 'Up to 1000' ";
-                sql += "WHEN mileage > 1000 and mileage <= 5000 then 'Up to 5,000' ";
-                sql += "WHEN mileage > 5000 and mileage <= 10000 then 'Up to 10,000' ";
-                sql += "WHEN mileage > 10000 and mileage <= 20000 then 'Up to 20,000' ";
-                sql += "WHEN mileage > 20000 and mileage <= 30000 then 'Up to 30,000' ";
-                sql += "WHEN mileage > 30000 and mileage <= 40000 then 'Up to 40,000' ";
-                sql += "WHEN mileage > 40000 and mileage <= 50000 then 'Up to 50,000' ";
-                sql += "WHEN mileage > 50000 and mileage <= 60000 then 'Up to 60,000' ";
-                sql += "WHEN mileage > 60000 and mileage <= 70000 then 'Up to 70,000' ";
-                sql += "WHEN mileage > 70000 and mileage <= 80000 then 'Up to 80,000' ";
-                sql += "WHEN mileage > 80000 and mileage <= 90000 then 'Up to 90,000' ";
-                sql += "WHEN mileage > 90000 and mileage <= 100000 then 'Up to 100,000' ";
-                sql += "ELSE 'Over 100,000' ";
-                sql += "END as Mileage_Cat, ";
-                sql += "CASE  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '1 Year' and NOW() then 'Up to 1 year'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '2 Year' and NOW() then 'Up to 2 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '3 Year' and NOW() then 'Up to 3 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '4 Year' and NOW() then 'U to 4 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '5 Year' and NOW() then 'Up to 5 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '6 Year' and NOW() then 'Up to 6 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '7 Year' and NOW() then 'Up to 7 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '8 Year' and NOW() then 'Up to 8 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '9 Year' and NOW() then 'Up to 9 years'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '10 Year' and NOW() then 'Up to 10 years'  ";
-                sql += "ELSE 'Over 10 year' ";
-                sql += "End as Age_cat, ";
-                sql += "CASE  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '2.5 Year' and NOW() then 'Late & Low'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '4.5 Year' and NOW() then 'Fleet Profile'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '6.5 Year' and NOW() then 'PX Young'  ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '10.5 Year' and NOW() then 'PX old'  ";
-                sql += "ELSE 'Budget' ";
-                sql += "End as Industry_Age_cat, ";
-                sql += "CASE ";
-                sql += "WHEN bodystyle like '%Cabriolet%' or bodystyle like '%CABRIOLET%' then 'Cabriolet' ";
-                sql += "WHEN bodystyle like '%Convertible%' or bodystyle like '%CONVERTIBLE%' then 'Convertible' ";
-                sql += "WHEN bodystyle like '%Coupe%' or bodystyle like '%CABRIOLET%' then 'Coupe' ";
-                sql += "WHEN bodystyle = 'Double Cab Pick-up' or bodystyle = 'Double Cab Dropside' or bodystyle = 'Double Cab Tipper' or bodystyle = 'Double Chassis Cab' then 'Double Cab Pick-up' ";
-                sql += "WHEN bodystyle like '%Estate%' or bodystyle like '%ESTATE%' then 'Estate' ";
-                sql += "WHEN bodystyle like '%Hardtop%' then 'Cabriolet' ";
-                sql += "WHEN bodystyle like '%Hatchback%' or bodystyle like '%HATCHBACK%' then 'Hatchback' ";
-                sql += "WHEN bodystyle like '%High Volume/High Roof Van%' then 'High Volume/High Roof Van' ";
-                sql += "WHEN bodystyle = 'Medium Roof Van' then 'Medium Roof Van' ";
-                sql += "WHEN bodystyle like '%Roadster%' then 'Roadster' ";
-                sql += "WHEN bodystyle like '%Saloon%' or bodystyle like '%SALOON%' then 'Saloon' ";
-                sql += "WHEN bodystyle like '%Station Wagon%' then 'Station Wagon' ";
-                sql += "WHEN bodystyle like '%Van%' then 'Van' ";
-                sql += "ELSE 'Others' ";
-                sql += "END AS BodyStyle, ";
-                sql += "CASE ";
-                sql += "WHEN enginesizecc is null then 'Unknown' ";
-                sql += "WHEN enginesizecc between 0 and 999 then 'Less than 1.0L' ";
-                sql += "WHEN enginesizecc between 1000 and 1399 then '1.0L - 1.3L' ";
-                sql += "WHEN enginesizecc between 1400 and 1699 then '1.4L - 1.6L' ";
-                sql += "WHEN enginesizecc between 1700 and 1999 then '1.7L - 1.9L' ";
-                sql += "WHEN enginesizecc between 2000 and 2599 then '2.0L - 2.5L' ";
-                sql += "WHEN enginesizecc between 2600 and 2999 then '2.6L - 2.9L' ";
-                sql += "WHEN enginesizecc between 3000 and 3999 then '3.0L - 3.9L' ";
-                sql += "WHEN enginesizecc between 4000 and 4999 then '4.0L - 4.9L' ";
-                sql += "ELSE '5.0L' ";
-                sql += "END AS Engine_Size_cat, ";
-                sql += "CASE 		 ";
-                sql += "when vehicle.colour is null then 'Not Specified'  ";
-                sql += "when lower(vehicle.colour) like '%black%' then 'Black'  ";
-                sql += "when lower(vehicle.colour) like '%white%' then 'White'  ";
-                sql += "when lower(vehicle.colour) like '%silver%' then 'Silver'  ";
-                sql += "when lower(vehicle.colour) like '%red%' then 'Red'  ";
-                sql += "when lower(vehicle.colour) like '%blue%' then 'Blue'  ";
-                sql += "when lower(vehicle.colour) like '%green%' then 'Green'  ";
-                sql += "when lower(vehicle.colour) like '%yellow%' then 'Yellow'  ";
-                sql += "when lower(vehicle.colour) like '%gold%' then 'Gold'  ";
-                sql += "when lower(vehicle.colour) like '%bronze%' then 'Bronze' ";
-                sql += "when lower(vehicle.colour) like '%purple%' then 'Purple'  ";
-                sql += "when lower(vehicle.colour) like '%magenta%' then 'Magenta'  ";
-                sql += "when lower(vehicle.colour) like '%grey%' then 'Grey'  ";
-                sql += "when lower(vehicle.colour) like '%brown%' then 'Brown'  ";
-                sql += "when lower(vehicle.colour) like '%beige%' then 'Beige'  ";
-                sql += "when lower(vehicle.colour) like '%fire%' then 'Red'  ";
-                sql += "when lower(vehicle.colour) like '%anthracite%' then 'Silver'  ";
-                sql += "when lower(vehicle.colour) like '%cream%' then 'Cream'  ";
-                sql += "when lower(vehicle.colour) like '%maroon%' then 'Maroon'  ";
-                sql += "when lower(vehicle.colour) like '%violet%' then 'Violet'  ";
-                sql += "when lower(vehicle.colour) like '%mauve%' then 'Mauve'  ";
-                sql += "when lower(vehicle.colour) like '%orange%' then 'Orange'  ";
-                sql += "when lower(vehicle.colour) like '%turquoise%' then 'Turquoise'  ";
-                sql += "when lower(vehicle.colour) like '%platinum%' then 'Silver'  ";
-                sql += "when lower(vehicle.colour) like '%graphite%' then 'Grey'   ";
-                sql += "when lower(vehicle.colour) like '%venetian%' then 'Red'   ";
-                sql += "when lower(vehicle.colour) like '%ruby%' then 'Red'   ";
-                sql += "when lower(vehicle.colour) like '%multi%' then 'Multi-Coloured'   ";
-                sql += "when lower(vehicle.colour) like '%pink%' then 'Pink' else 'Other'   ";
-                sql += "END AS vehicle_standard_colour,  ";
-                sql += "CASE  ";
-                sql += "WHEN sale.site_id = 1 THEN 'AB Chelmsford' ";
-                sql += "WHEN sale.site_id = 659779 THEN 'AB Press Heath' ";
-                sql += "WHEN sale.site_id= 659780 THEN 'AB Westbury' ";
-                sql += "ELSE 'AB Leeds' ";
-                sql += "END AS Site_Location, ";
-                String vehiclestats = sql;
 
                 sql = "SELECT ";
                 sql += "sale.site_id as sale_site_id, ";
@@ -1011,6 +1016,11 @@ namespace PhocasData
                 sql += "commission as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (seller.accountnumber = 'PR' or seller.accountnumber = 'pr') THEN 'Private Seller' ";
+                sql += "WHEN (seller.accountnumber = 'TR' or seller.accountnumber = 'tr') THEN 'Trade Seller' ";
+                sql += "ELSE 'Commercial Seller' ";
+                sql += "END AS SellerGroup, ";
                 sql += "seller.id as client_id, ";
                 sql += "seller.accountnumber as client_accountnumber, ";
                 sql += "'seller' as clienttype, ";
@@ -1038,6 +1048,11 @@ namespace PhocasData
                 sql += "entryfee as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (seller.accountnumber = 'PR' or seller.accountnumber = 'pr') THEN 'Private Seller' ";
+                sql += "WHEN (seller.accountnumber = 'TR' or seller.accountnumber = 'tr') THEN 'Trade Seller' ";
+                sql += "ELSE 'Commercial Seller' ";
+                sql += "END AS SellerGroup, ";
                 sql += "seller.id as client_id, ";
                 sql += "seller.accountnumber as client_accountnumber, ";
                 sql += "'seller' as clienttype, ";
@@ -1065,6 +1080,11 @@ namespace PhocasData
                 sql += "collection as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (seller.accountnumber = 'PR' or seller.accountnumber = 'pr') THEN 'Private Seller' ";
+                sql += "WHEN (seller.accountnumber = 'TR' or seller.accountnumber = 'tr') THEN 'Trade Seller' ";
+                sql += "ELSE 'Commercial Seller' ";
+                sql += "END AS SellerGroup, ";
                 sql += "seller.id as client_id, ";
                 sql += "seller.accountnumber as client_accountnumber, ";
                 sql += "'seller' as clienttype, ";
@@ -1092,6 +1112,11 @@ namespace PhocasData
                 sql += "ben as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (seller.accountnumber = 'PR' or seller.accountnumber = 'pr') THEN 'Private Seller' ";
+                sql += "WHEN (seller.accountnumber = 'TR' or seller.accountnumber = 'tr') THEN 'Trade Seller' ";
+                sql += "ELSE 'Commercial Seller' ";
+                sql += "END AS SellerGroup, ";
                 sql += "seller.id as client_id, ";
                 sql += "seller.accountnumber as client_accountnumber, ";
                 sql += "'seller' as clienttype, ";
@@ -1119,6 +1144,11 @@ namespace PhocasData
                 sql += "sellerinvoicevehicleentry_charges.charges_amount as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (seller.accountnumber = 'PR' or seller.accountnumber = 'pr') THEN 'Private Seller' ";
+                sql += "WHEN (seller.accountnumber = 'TR' or seller.accountnumber = 'tr') THEN 'Trade Seller' ";
+                sql += "ELSE 'Commercial Seller' ";
+                sql += "END AS SellerGroup, ";
                 sql += "seller.id as client_id, ";
                 sql += "seller.accountnumber as client_accountnumber, ";
                 sql += "'seller' as clienttype, ";
@@ -1204,6 +1234,12 @@ namespace PhocasData
                 sql += "saleresult.cachedgrossprice as grosscost, ";
                 sql += "saleresult.cachednetprice as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
+                sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (buyer.accountnumber = 'PR' or buyer.accountnumber = 'pr') THEN 'Private buyer' ";
+                sql += "WHEN (buyer.accountnumber = 'TR' or buyer.accountnumber = 'tr') THEN 'Trade buyer' ";
+                sql += "ELSE 'Commercial buyer' ";
+                sql += "END AS buyerGroup, ";
                 sql += "buyer.id as client_id, ";
                 sql += "buyer.accountnumber as client_accountnumber, ";
                 sql += "'buyer' as clienttype, ";
@@ -1229,6 +1265,12 @@ namespace PhocasData
                 sql += "(indemnity * (100 + vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "indemnity as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
+                sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (buyer.accountnumber = 'PR' or buyer.accountnumber = 'pr') THEN 'Private buyer' ";
+                sql += "WHEN (buyer.accountnumber = 'TR' or buyer.accountnumber = 'tr') THEN 'Trade buyer' ";
+                sql += "ELSE 'Commercial buyer' ";
+                sql += "END AS buyerGroup, ";
                 sql += "buyer.id as client_id, ";
                 sql += "buyer.accountnumber as client_accountnumber, ";
                 sql += "'buyer' as clienttype, ";
@@ -1255,6 +1297,12 @@ namespace PhocasData
                 sql += "(delivery * (100 + vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "delivery as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
+                sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (buyer.accountnumber = 'PR' or buyer.accountnumber = 'pr') THEN 'Private buyer' ";
+                sql += "WHEN (buyer.accountnumber = 'TR' or buyer.accountnumber = 'tr') THEN 'Trade buyer' ";
+                sql += "ELSE 'Commercial buyer' ";
+                sql += "END AS buyerGroup, ";
                 sql += "buyer.id as client_id, ";
                 sql += "buyer.accountnumber as client_accountnumber, ";
                 sql += "'buyer' as clienttype, ";
@@ -1281,6 +1329,12 @@ namespace PhocasData
                 sql += "case when buyerinvoicevehicleentry_fees.fees_vatexempt = true then buyerinvoicevehicleentry_fees.fees_amount else (buyerinvoicevehicleentry_fees.fees_amount * ((100 + vatrate) / 100 ))::numeric(20,2) end as grosscost, ";
                 sql += "buyerinvoicevehicleentry_fees.fees_amount as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
+                sql += vehiclestats;
+                sql += "CASE ";
+                sql += "WHEN (buyer.accountnumber = 'PR' or buyer.accountnumber = 'pr') THEN 'Private buyer' ";
+                sql += "WHEN (buyer.accountnumber = 'TR' or buyer.accountnumber = 'tr') THEN 'Trade buyer' ";
+                sql += "ELSE 'Commercial buyer' ";
+                sql += "END AS buyerGroup, ";
                 sql += "buyer.id as client_id, ";
                 sql += "buyer.accountnumber as client_accountnumber, ";
                 sql += "'buyer' as clienttype, ";
@@ -1959,6 +2013,94 @@ namespace PhocasData
 
                 Console.WriteLine("Written Transport Records Data");
                 LogMsg("Written Transport Records Data");
+            }
+
+            catch (NpgsqlException ne)
+            {
+                Console.WriteLine("SQL Error {0}", ne.Message);
+                LogMsg(ne);
+            }
+
+            catch (IOException ie)
+            {
+                Console.WriteLine("IOException Error {0}", ie.Message);
+                LogMsg(ie);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine("Upload File Failed, status {0}", we.Message);
+                LogMsg(we);
+            }
+
+            finally
+            {
+                conn.Close();
+            }
+
+        }
+
+        /**
+         * Created on 10/11/2016.
+         * Gets on site records for Phocas
+         * @author andy
+         *
+         */
+        private static void GetOnSiteRecordsCSV()
+        {
+            try
+            {
+                conn.Open();
+                string sql = null;
+
+                // Find all Vehicle entry dates
+
+                sql = "SELECT ";
+                sql += "vehicle.\"id\" AS vehicle_id, ";
+                sql += "to_char(vehicle.\"entrydate\", 'dd/mm/yyyy') AS vehicle_entrydate,";
+                sql += "to_char(vehicle.\"exitdate\", 'dd/mm/yyyy') AS vehicle_exitdate,";
+                sql += "sum(case when (entrydate between '2015-01-01' and '2015-02-01') or (exitdate between '2015-01-01' and '2015-02-01') or (entrydate < '2015-01-01' and (exitdate > '2015-02-01' or exitdate is null)) then 1 else 0 end) as jan15, ";
+                sql += "sum(case when (entrydate between '2015-02-01' and '2015-03-01') or (exitdate between '2015-02-01' and '2015-03-01') or (entrydate < '2015-02-01' and (exitdate > '2015-03-01' or exitdate is null)) then 1 else 0 end) as feb15, ";
+                sql += "sum(case when (entrydate between '2015-03-01' and '2015-04-01') or (exitdate between '2015-03-01' and '2015-04-01') or (entrydate < '2015-03-01' and (exitdate > '2015-04-01' or exitdate is null)) then 1 else 0 end) as mar15, ";
+                sql += "sum(case when (entrydate between '2015-04-01' and '2015-05-01') or (exitdate between '2015-04-01' and '2015-05-01') or (entrydate < '2015-04-01' and (exitdate > '2015-05-01' or exitdate is null)) then 1 else 0 end) as apr15, ";
+                sql += "sum(case when (entrydate between '2015-05-01' and '2015-06-01') or (exitdate between '2015-05-01' and '2015-06-01') or (entrydate < '2015-05-01' and (exitdate > '2015-06-01' or exitdate is null)) then 1 else 0 end) as may15, ";
+                sql += "sum(case when (entrydate between '2015-06-01' and '2015-07-01') or (exitdate between '2015-06-01' and '2015-07-01') or (entrydate < '2015-06-01' and (exitdate > '2015-07-01' or exitdate is null)) then 1 else 0 end) as jun15, ";
+                sql += "sum(case when (entrydate between '2015-07-01' and '2015-08-01') or (exitdate between '2015-07-01' and '2015-08-01') or (entrydate < '2015-07-01' and (exitdate > '2015-08-01' or exitdate is null)) then 1 else 0 end) as jul15, ";
+                sql += "sum(case when (entrydate between '2015-08-01' and '2015-09-01') or (exitdate between '2015-08-01' and '2015-09-01') or (entrydate < '2015-08-01' and (exitdate > '2015-09-01' or exitdate is null)) then 1 else 0 end) as aug15, ";
+                sql += "sum(case when (entrydate between '2015-09-01' and '2015-10-01') or (exitdate between '2015-09-01' and '2015-10-01') or (entrydate < '2015-09-01' and (exitdate > '2015-10-01' or exitdate is null)) then 1 else 0 end) as sep15, ";
+                sql += "sum(case when (entrydate between '2015-10-01' and '2015-11-01') or (exitdate between '2015-10-01' and '2015-11-01') or (entrydate < '2015-10-01' and (exitdate > '2015-11-01' or exitdate is null)) then 1 else 0 end) as oct15, ";
+                sql += "sum(case when (entrydate between '2015-11-01' and '2015-12-01') or (exitdate between '2015-11-01' and '2015-12-01') or (entrydate < '2015-11-01' and (exitdate > '2015-12-01' or exitdate is null)) then 1 else 0 end) as nov15, ";
+                sql += "sum(case when (entrydate between '2015-12-01' and '2016-01-01') or (exitdate between '2015-12-01' and '2016-01-01') or (entrydate < '2015-12-01' and (exitdate > '2016-01-01' or exitdate is null)) then 1 else 0 end) as dec15, ";
+                sql += "sum(case when (entrydate between '2016-01-01' and '2016-02-01') or (exitdate between '2016-01-01' and '2016-02-01') or (entrydate < '2016-01-01' and (exitdate > '2016-02-01' or exitdate is null)) then 1 else 0 end) as jan16, ";
+                sql += "sum(case when (entrydate between '2016-02-01' and '2016-03-01') or (exitdate between '2016-02-01' and '2016-03-01') or (entrydate < '2016-02-01' and (exitdate > '2016-03-01' or exitdate is null)) then 1 else 0 end) as feb16, ";
+                sql += "sum(case when (entrydate between '2016-03-01' and '2016-04-01') or (exitdate between '2016-03-01' and '2016-04-01') or (entrydate < '2016-03-01' and (exitdate > '2016-04-01' or exitdate is null)) then 1 else 0 end) as mar16, ";
+                sql += "sum(case when (entrydate between '2016-04-01' and '2016-05-01') or (exitdate between '2016-04-01' and '2016-05-01') or (entrydate < '2016-04-01' and (exitdate > '2016-05-01' or exitdate is null)) then 1 else 0 end) as apr16, ";
+                sql += "sum(case when (entrydate between '2016-05-01' and '2016-06-01') or (exitdate between '2016-05-01' and '2016-06-01') or (entrydate < '2016-05-01' and (exitdate > '2016-06-01' or exitdate is null)) then 1 else 0 end) as may16, ";
+                sql += "sum(case when (entrydate between '2016-06-01' and '2016-07-01') or (exitdate between '2016-06-01' and '2016-07-01') or (entrydate < '2016-06-01' and (exitdate > '2016-07-01' or exitdate is null)) then 1 else 0 end) as jun16, ";
+                sql += "sum(case when (entrydate between '2016-07-01' and '2016-08-01') or (exitdate between '2016-07-01' and '2016-08-01') or (entrydate < '2016-07-01' and (exitdate > '2016-08-01' or exitdate is null)) then 1 else 0 end) as jul16, ";
+                sql += "sum(case when (entrydate between '2016-08-01' and '2016-09-01') or (exitdate between '2016-08-01' and '2016-09-01') or (entrydate < '2016-08-01' and (exitdate > '2016-09-01' or exitdate is null)) then 1 else 0 end) as aug16, ";
+                sql += "sum(case when (entrydate between '2016-09-01' and '2016-10-01') or (exitdate between '2016-09-01' and '2016-10-01') or (entrydate < '2016-09-01' and (exitdate > '2016-10-01' or exitdate is null)) then 1 else 0 end) as sep16, ";
+                sql += "sum(case when (entrydate between '2016-10-01' and '2016-11-01') or (exitdate between '2016-10-01' and '2016-11-01') or (entrydate < '2016-10-01' and (exitdate > '2016-11-01' or exitdate is null)) then 1 else 0 end) as oct16, ";
+                sql += "sum(case when (entrydate between '2016-11-01' and '2016-12-01') or (exitdate between '2016-11-01' and '2016-12-01') or (entrydate < '2016-11-01' and (exitdate > '2016-12-01' or exitdate is null)) then 1 else 0 end) as nov16, ";
+                sql += "sum(case when (entrydate between '2016-12-01' and '2017-01-01') or (exitdate between '2016-12-01' and '2017-01-01') or (entrydate < '2016-12-01' and (exitdate > '2017-01-01' or exitdate is null)) then 1 else 0 end) as dec16 ";
+                sql += "from vehicle where entrydate is not null ";
+                sql += "group by id ";
+                sql += "order by entrydate ";
+
+
+                LogMsg("On Site Records SQL " + sql);
+
+                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlDataReader dr = command.ExecuteReader();
+
+                Console.WriteLine("Extracted On Site Records Data");
+                LogMsg("Extracted On Site Records Data");
+
+                String fn = csvDataPath + "onsiterecords" + ".csv";
+
+                WriteCSV(fn, dr);
+
+                Console.WriteLine("Written On Site Records Data");
+                LogMsg("Written On Site Records Data");
             }
 
             catch (NpgsqlException ne)
