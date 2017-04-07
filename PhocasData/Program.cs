@@ -105,37 +105,43 @@ namespace PhocasData
             vehiclestats += "WHEN enginesizecc between 4000 and 4999 then '4.0L - 4.9L' ";
             vehiclestats += "ELSE '5.0L' ";
             vehiclestats += "END AS Engine_Size_cat, ";
+            // DVLA Colours
             vehiclestats += "CASE 		 ";
-            vehiclestats += "when vehicle.colour is null then 'Not Specified'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%black%' then 'Black'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%white%' then 'White'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%silver%' then 'Silver'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%red%' then 'Red'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%blue%' then 'Blue'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%green%' then 'Green'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%yellow%' then 'Yellow'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%gold%' then 'Gold'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%bronze%' then 'Bronze' ";
-            vehiclestats += "when lower(vehicle.colour) like '%purple%' then 'Purple'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%magenta%' then 'Magenta'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%grey%' then 'Grey'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%brown%' then 'Brown'  ";
             vehiclestats += "when lower(vehicle.colour) like '%beige%' then 'Beige'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%buff%' then 'Beige'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%black%' then 'Black'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%blue%' then 'Blue'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%bronze%' then 'Bronze' ";
+            vehiclestats += "when lower(vehicle.colour) like '%brown%' then 'Brown'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%cream%' then 'Cream'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%gold%' then 'Gold'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%green%' then 'Green'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%grey%' then 'Grey'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%maroon%' then 'Maroon'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%purple%' then 'Purple'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%violet%' then 'Purple'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%mauve%' then 'Purple'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%orange%' then 'Orange'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%pink%' then 'Pink' ";
+            vehiclestats += "when lower(vehicle.colour) like '%red%' then 'Red'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%silver%' then 'Silver'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%turquoise%' then 'Turquoise'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%white%' then 'White'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%yellow%' then 'Yellow'  ";
+            // Extra Mercedes plus colours
+            vehiclestats += "when lower(vehicle.colour) like '%ivory%' then 'Cream'  ";
             vehiclestats += "when lower(vehicle.colour) like '%fire%' then 'Red'  ";
             vehiclestats += "when lower(vehicle.colour) like '%anthracite%' then 'Silver'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%cream%' then 'Cream'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%maroon%' then 'Maroon'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%violet%' then 'Violet'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%mauve%' then 'Mauve'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%orange%' then 'Orange'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%turquoise%' then 'Turquoise'  ";
             vehiclestats += "when lower(vehicle.colour) like '%platinum%' then 'Silver'  ";
             vehiclestats += "when lower(vehicle.colour) like '%graphite%' then 'Grey'   ";
             vehiclestats += "when lower(vehicle.colour) like '%venetian%' then 'Red'   ";
             vehiclestats += "when lower(vehicle.colour) like '%ruby%' then 'Red'   ";
+            vehiclestats += "when lower(vehicle.colour) like '%aluminium%' then 'Silver'  ";
             vehiclestats += "when lower(vehicle.colour) like '%multi%' then 'Multi-Coloured'   ";
-            vehiclestats += "when lower(vehicle.colour) like '%pink%' then 'Pink' else 'Other'   ";
+            vehiclestats += "when vehicle.colour is null then 'Not Specified'  else 'Other'  ";
             vehiclestats += "END AS vehicle_standard_colour,  ";
+            //            vehiclestats += "when lower(vehicle.colour) like '%magenta%' then 'Magenta'  ";
+
             vehiclestats += "CASE  ";
             vehiclestats += "WHEN sale.site_id = 1 THEN 'AB Chelmsford' ";
             vehiclestats += "WHEN sale.site_id = 659779 THEN 'AB Press Heath' ";
@@ -150,7 +156,7 @@ namespace PhocasData
             GetSaleCSV();
 
             // Generate Client CSV
-            //GetClientCSV();
+            GetClientCSV();
 
             // Generate Client CSV
             GetClientGroupCSV();
@@ -189,6 +195,9 @@ namespace PhocasData
 
             // Generate Transport Records CSV
             GetOnSiteRecordsCSV();
+
+            // Generate Geo Data CSV
+            GetGeoDataCSV();
 
             DateTime end = DateTime.Now;
             Console.WriteLine("Completed data extract " + end);
@@ -440,7 +449,8 @@ namespace PhocasData
                 sql += "end AS vehicle_standard_colour, ";
                 sql += "case when inspection.grade is null or LENGTH(inspection.grade) < 1 or inspection.result is null or LENGTH(inspection.result) < 1 then 'N/A' ";
                 sql += " else (concat(inspection.grade,left(inspection.result,1))) end AS combined_grade, ";
-                sql += "case when inspection.costedreport_id is null then '' else '" + imgixurl + "' || image.externalpath end as costedpdfurl ";
+                sql += "case when inspection.costedreport_id is null then '' else '" + imgixurl + "' || image.externalpath end as costedpdfurl, ";
+                sql += "vehicle.withdrawn as withdrawn ";
                 sql += "FROM ";
                 sql += "\"public\".\"vehicle\" vehicle INNER JOIN \"public\".\"sales_per_vehicle\" sales_per_vehicle ON vehicle.\"id\" = sales_per_vehicle.\"vehicle_id\" ";
                 sql += "LEFT OUTER JOIN \"public\".\"inspection\" inspection ON vehicle.\"primaryinspection_id\" = inspection.\"id\"   ";
@@ -580,7 +590,7 @@ namespace PhocasData
                 sql += "sale.\"hall_hall\" AS sale_hall,";
                 sql += "DATE(start) as dstart,";
                 sql += "case when EXTRACT(HOUR from start) < 12 then 'AM' else (case when EXTRACT(HOUR from start) < 16 then 'PM' else 'EVENING' end) end as hstart,";
-                sql += "to_char(start, 'dy') as day";
+                sql += "initcap(to_char(start, 'dy')) as day";
                 sql += " FROM ";
                 sql += "sale";
                 sql += " ORDER BY sale.\"id\"";
@@ -727,7 +737,9 @@ namespace PhocasData
                 sql += " max(client.creditlimit) AS client_creditlimit, ";
                 sql += " max(client_grouptag.client_id) as clientgroup_client_id, ";
                 sql += " max(client_grouptag.groups_id) as clientgroup_group_id, ";
-                sql += " string_agg(grouptag.description, ',') as grouptag_description ";
+                sql += " string_agg(grouptag.description, ',') as grouptag_description, ";
+                sql += " max(client.seller_type) AS client_seller_type, ";
+                sql += " max(client.buyer_type) AS client_buyer_type ";
                 sql += "FROM ";
                 sql += " client LEFT OUTER JOIN client_grouptag client_grouptag ON client.id = client_grouptag.client_id ";
                 sql += " LEFT OUTER JOIN grouptag grouptag ON client_grouptag.groups_id = grouptag.id ";
@@ -916,11 +928,11 @@ namespace PhocasData
                 string sql = null;
 
                 // Find all Transactions for vehicle
-                sql = "select vehicle_id, seller_id as client_id, (commission * (100 + 20) / 100 )::numeric(20,2) as grosscost, commission as netcost, 'commission' as tag ";
+                sql = "select vehicle_id, seller_id as client_id, (commission * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, commission as netcost, 'commission' as tag ";
                 sql += "from sellerinvoicevehicleentry sive ";
                 sql += "where commission > 0 and rescinded = false ";
                 sql += "union all ";
-                sql += "select vehicle_id, seller_id as client_id, (entryfee * (100 + 20) / 100 )::numeric(20,2) as grosscost, entryfee as netcost, 'entry fee' as tag ";
+                sql += "select vehicle_id, seller_id as client_id, (entryfee * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, entryfee as netcost, 'entry fee' as tag ";
                 sql += "from sellerinvoicevehicleentry sive ";
                 sql += "where entryfee > 0  and rescinded = false ";
                 sql += "union all ";
@@ -928,7 +940,7 @@ namespace PhocasData
                 sql += "from sellerinvoicevehicleentry sive ";
                 sql += "where ben > 0  and rescinded = false ";
                 sql += "union all ";
-                sql += "select vehicle_id, seller_id as client_id, (collection * (100 + 20) / 100 )::numeric(20,2) as grosscost, collection as netcost, 'collection' as tag ";
+                sql += "select vehicle_id, seller_id as client_id, (collection * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, collection as netcost, 'collection' as tag ";
                 sql += "from sellerinvoicevehicleentry sive ";
                 sql += "where collection > 0  and rescinded = false ";
                 sql += "union all ";
@@ -944,7 +956,7 @@ namespace PhocasData
                 sql += "from public.buyerinvoicevehicleentry buyerinvoicevehicleentry INNER JOIN public.buyerinvoicevehicleentry_fees buyerinvoicevehicleentry_fees ON buyerinvoicevehicleentry_fees.buyerinvoicevehicleentry_id = buyerinvoicevehicleentry.id ";
                 sql += "where rescinded = false ";
                 sql += "union all ";
-                sql += "select vehicle_id, seller_id as client_id, case when sellerinvoicevehicleentry_charges.charges_vatexempt = true then sellerinvoicevehicleentry_charges.charges_amount else (sellerinvoicevehicleentry_charges.charges_amount * ((100 + 20) / 100 ))::numeric(20,2) end as grosscost, sellerinvoicevehicleentry_charges.charges_amount as netcost, sellerinvoicevehicleentry_charges.charges_code as tag ";
+                sql += "select vehicle_id, seller_id as client_id, case when sellerinvoicevehicleentry_charges.charges_vatexempt = true then sellerinvoicevehicleentry_charges.charges_amount else (sellerinvoicevehicleentry_charges.charges_amount * ((100 + sellerinvoicevehicleentry.vatrate) / 100 ))::numeric(20,2) end as grosscost, sellerinvoicevehicleentry_charges.charges_amount as netcost, sellerinvoicevehicleentry_charges.charges_code as tag ";
                 sql += "from public.sellerinvoicevehicleentry sellerinvoicevehicleentry INNER JOIN public.sellerinvoicevehicleentry_charges sellerinvoicevehicleentry_charges ON sellerinvoicevehicleentry_charges.sellerinvoicevehicleentry_id = sellerinvoicevehicleentry.id ";
                 sql += "where rescinded = false ";
                 sql += "order by vehicle_id, client_id";
@@ -1012,7 +1024,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "(commission * (100 + 20) / 100 )::numeric(20,2) as grosscost, ";
+                sql += "(commission * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "commission as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
@@ -1044,7 +1056,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "(entryfee * (100 + 20) / 100 )::numeric(20,2) as grosscost, ";
+                sql += "(entryfee * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "entryfee as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
@@ -1076,7 +1088,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "(collection * (100 + 20) / 100 )::numeric(20,2) as grosscost, ";
+                sql += "(collection * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "collection as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
@@ -1140,7 +1152,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "case when sellerinvoicevehicleentry_charges.charges_vatexempt = true then sellerinvoicevehicleentry_charges.charges_amount else (sellerinvoicevehicleentry_charges.charges_amount * ((100 + 20) / 100 ))::numeric(20,2) end as grosscost, ";
+                sql += "case when sellerinvoicevehicleentry_charges.charges_vatexempt = true then sellerinvoicevehicleentry_charges.charges_amount else (sellerinvoicevehicleentry_charges.charges_amount * ((100 + sellerinvoicevehicleentry.vatrate) / 100 ))::numeric(20,2) end as grosscost, ";
                 sql += "sellerinvoicevehicleentry_charges.charges_amount as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
@@ -1231,8 +1243,10 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "saleresult.cachedgrossprice as grosscost, ";
-                sql += "saleresult.cachednetprice as netcost, ";
+                sql += "buyerinvoicevehicleentry.vehiclegross as grosscost, ";
+                sql += "buyerinvoicevehicleentry.vehiclenet as netcost, ";
+                sql += "bive_extended.total_charges_gross as feesgross, ";
+                sql += "bive_extended.total_charges_net as feesnet, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
                 sql += "CASE ";
@@ -1249,6 +1263,8 @@ namespace PhocasData
                 sql += "INNER JOIN public.saleresult saleresult ON vehicle.id = saleresult.vehicle_id ";
                 sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id ";
                 sql += "INNER JOIN public.client buyer ON saleresult.buyer_id = buyer.id ";
+                sql += "INNER JOIN public.buyerinvoicevehicleentry buyerinvoicevehicleentry ON vehicle.id = buyerinvoicevehicleentry.vehicle_id ";
+                sql += "INNER JOIN public.bive_extended bive_extended ON bive_extended.id = buyerinvoicevehicleentry.id ";
                 sql += "WHERE   ";
                 sql += "saleresult.status = 1 ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
@@ -1264,6 +1280,8 @@ namespace PhocasData
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "(indemnity * (100 + vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "indemnity as netcost, ";
+                sql += "bive_extended.total_charges_gross as feesgross, ";
+                sql += "bive_extended.total_charges_net as feesnet, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
                 sql += "CASE ";
@@ -1281,6 +1299,7 @@ namespace PhocasData
                 sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id ";
                 sql += "INNER JOIN public.client buyer ON saleresult.buyer_id = buyer.id ";
                 sql += "INNER JOIN public.buyerinvoicevehicleentry buyerinvoicevehicleentry ON vehicle.id = buyerinvoicevehicleentry.vehicle_id ";
+                sql += "INNER JOIN public.bive_extended bive_extended ON bive_extended.id = buyerinvoicevehicleentry.id ";
                 sql += "WHERE ";
                 sql += "indemnity > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
@@ -1296,6 +1315,8 @@ namespace PhocasData
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "(delivery * (100 + vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "delivery as netcost, ";
+                sql += "bive_extended.total_charges_gross as feesgross, ";
+                sql += "bive_extended.total_charges_net as feesnet, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
                 sql += "CASE ";
@@ -1313,6 +1334,7 @@ namespace PhocasData
                 sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id ";
                 sql += "INNER JOIN public.client buyer ON saleresult.buyer_id = buyer.id ";
                 sql += "INNER JOIN public.buyerinvoicevehicleentry buyerinvoicevehicleentry ON vehicle.id = buyerinvoicevehicleentry.vehicle_id ";
+                sql += "INNER JOIN public.bive_extended bive_extended ON bive_extended.id = buyerinvoicevehicleentry.id ";
                 sql += "WHERE ";
                 sql += "delivery > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
@@ -1328,6 +1350,8 @@ namespace PhocasData
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "case when buyerinvoicevehicleentry_fees.fees_vatexempt = true then buyerinvoicevehicleentry_fees.fees_amount else (buyerinvoicevehicleentry_fees.fees_amount * ((100 + vatrate) / 100 ))::numeric(20,2) end as grosscost, ";
                 sql += "buyerinvoicevehicleentry_fees.fees_amount as netcost, ";
+                sql += "bive_extended.total_charges_gross as feesgross, ";
+                sql += "bive_extended.total_charges_net as feesnet, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += vehiclestats;
                 sql += "CASE ";
@@ -1346,6 +1370,7 @@ namespace PhocasData
                 sql += "INNER JOIN public.client buyer ON saleresult.buyer_id = buyer.id ";
                 sql += "INNER JOIN public.buyerinvoicevehicleentry buyerinvoicevehicleentry ON vehicle.id = buyerinvoicevehicleentry.vehicle_id ";
                 sql += "INNER JOIN public.buyerinvoicevehicleentry_fees buyerinvoicevehicleentry_fees ON buyerinvoicevehicleentry_fees.buyerinvoicevehicleentry_id = buyerinvoicevehicleentry.id ";
+                sql += "INNER JOIN public.bive_extended bive_extended ON bive_extended.id = buyerinvoicevehicleentry.id ";
                 sql += "WHERE rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
                 sql += " and vehicle.\"status\" != -1 ";
@@ -1415,7 +1440,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "(commission * (100 + 20) / 100 )::numeric(20,2) as grosscost, ";
+                sql += "(commission * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "commission as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += "seller.id as client_id, ";
@@ -1438,7 +1463,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "(entryfee * (100 + 20) / 100 )::numeric(20,2) as grosscost, ";
+                sql += "(entryfee * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "entryfee as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += "seller.id as client_id, ";
@@ -1461,7 +1486,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "(collection * (100 + 20) / 100 )::numeric(20,2) as grosscost, ";
+                sql += "(collection * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "collection as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += "seller.id as client_id, ";
@@ -1507,7 +1532,7 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "case when sellerinvoicevehicleentry_charges.charges_vatexempt = true then sellerinvoicevehicleentry_charges.charges_amount else (sellerinvoicevehicleentry_charges.charges_amount * ((100 + 20) / 100 ))::numeric(20,2) end as grosscost, ";
+                sql += "case when sellerinvoicevehicleentry_charges.charges_vatexempt = true then sellerinvoicevehicleentry_charges.charges_amount else (sellerinvoicevehicleentry_charges.charges_amount * ((100 + sellerinvoicevehicleentry.vatrate) / 100 ))::numeric(20,2) end as grosscost, ";
                 sql += "sellerinvoicevehicleentry_charges.charges_amount as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += "seller.id as client_id, ";
@@ -1530,8 +1555,8 @@ namespace PhocasData
                 sql += "sale.description as sale_description, ";
                 sql += "saleresult.lot as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
-                sql += "saleresult.cachedgrossprice as grosscost, ";
-                sql += "saleresult.cachednetprice as netcost, ";
+                sql += "saleresult.closingprice as grosscost, ";
+                sql += "saleresult.closingprice as netcost, ";
                 sql += "vehicle.id as vehicle_id, ";
                 sql += "buyer.id as client_id, ";
                 sql += "buyer.accountnumber as client_accountnumber, ";
@@ -1768,15 +1793,28 @@ namespace PhocasData
                 sql += "(buyer.id) as buyer_id,  ";
                 sql += "(to_char(saleresult.soldstamp, 'dd/mm/yyyy')) as saleresult_soldstamp,  ";
                 sql += "(saleresult.webviews) as saleresult_webviews,  ";
-                sql += "(saleresult.uniquewebviews) as saleresult_uniquewebviews  ";
+                sql += "(saleresult.uniquewebviews) as saleresult_uniquewebviews,  ";
+                sql += "(case when vehicle.damagecost is not null and saleresult.status = 1 then vehicle.damagecost else case when inspection.totaldamage is not null then inspection.totaldamage else 0 end end) as vehicledamage, ";
+                sql += "(case when vehicle.damagecost is not null and saleresult.status = 1 then 1 else case when inspection.totaldamage is not null then 1 else 0 end end) as vehicledamagecount, ";
+                sql += "(case when vehicle.mileage is not null and saleresult.status = 1 then vehicle.mileage else 0 end) as soldvehiclemileage, ";
+                sql += "(case when vehicle.mileage is not null and saleresult.status = 1 then 1 else 0 end) as soldvehiclemileagecount, ";
+                sql += "sales_per_vehicle.count as sales_per_vehicle, ";
+                sql += "extract('days' from (NOW() - vehicle.firstregistration)) as age, ";
+                sql += "inspection.grade as grade, ";
+                sql += "case when saleresult.status = 0 then 1 else 0 end as enteredcount, ";
+                sql += "case when saleresult.status = 1 then 1 else 0 end as soldcount, ";
+                sql += "case when saleresult.status = 2 then 1 else 0 end as unsoldcount, ";
+                sql += "case when saleresult.status = 3 then 1 else 0 end as provisionalcount, ";
+                sql += "case when saleresult.status = 1 and sales_per_vehicle.count = 1 then 1 else 0 end as firsttimesale ";
                 sql += "FROM  ";
                 sql += "public.vehicle vehicle INNER JOIN public.client seller ON seller.id = vehicle.seller_id  ";
                 sql += "INNER JOIN public.saleresult saleresult ON vehicle.id = saleresult.vehicle_id  ";
                 sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id  ";
                 sql += "LEFT OUTER JOIN public.client buyer ON saleresult.buyer_id = buyer.id  ";
+                sql += "LEFT OUTER JOIN public.inspection inspection ON vehicle.primaryinspection_id = inspection.id  ";
+                sql += "LEFT OUTER JOIN public.sales_per_vehicle sales_per_vehicle ON vehicle.id = sales_per_vehicle.vehicle_id  ";
                 sql += " WHERE ";
                 sql += " vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "ORDER by sale.id, saleresult.lot  ";
                     
@@ -2054,38 +2092,20 @@ namespace PhocasData
 
                 // Find all Vehicle entry dates
 
-                sql = "SELECT ";
-                sql += "vehicle.\"id\" AS vehicle_id, ";
-                sql += "to_char(vehicle.\"entrydate\", 'dd/mm/yyyy') AS vehicle_entrydate,";
-                sql += "to_char(vehicle.\"exitdate\", 'dd/mm/yyyy') AS vehicle_exitdate,";
-                sql += "sum(case when (entrydate between '2015-01-01' and '2015-02-01') or (exitdate between '2015-01-01' and '2015-02-01') or (entrydate < '2015-01-01' and (exitdate > '2015-02-01' or exitdate is null)) then 1 else 0 end) as jan15, ";
-                sql += "sum(case when (entrydate between '2015-02-01' and '2015-03-01') or (exitdate between '2015-02-01' and '2015-03-01') or (entrydate < '2015-02-01' and (exitdate > '2015-03-01' or exitdate is null)) then 1 else 0 end) as feb15, ";
-                sql += "sum(case when (entrydate between '2015-03-01' and '2015-04-01') or (exitdate between '2015-03-01' and '2015-04-01') or (entrydate < '2015-03-01' and (exitdate > '2015-04-01' or exitdate is null)) then 1 else 0 end) as mar15, ";
-                sql += "sum(case when (entrydate between '2015-04-01' and '2015-05-01') or (exitdate between '2015-04-01' and '2015-05-01') or (entrydate < '2015-04-01' and (exitdate > '2015-05-01' or exitdate is null)) then 1 else 0 end) as apr15, ";
-                sql += "sum(case when (entrydate between '2015-05-01' and '2015-06-01') or (exitdate between '2015-05-01' and '2015-06-01') or (entrydate < '2015-05-01' and (exitdate > '2015-06-01' or exitdate is null)) then 1 else 0 end) as may15, ";
-                sql += "sum(case when (entrydate between '2015-06-01' and '2015-07-01') or (exitdate between '2015-06-01' and '2015-07-01') or (entrydate < '2015-06-01' and (exitdate > '2015-07-01' or exitdate is null)) then 1 else 0 end) as jun15, ";
-                sql += "sum(case when (entrydate between '2015-07-01' and '2015-08-01') or (exitdate between '2015-07-01' and '2015-08-01') or (entrydate < '2015-07-01' and (exitdate > '2015-08-01' or exitdate is null)) then 1 else 0 end) as jul15, ";
-                sql += "sum(case when (entrydate between '2015-08-01' and '2015-09-01') or (exitdate between '2015-08-01' and '2015-09-01') or (entrydate < '2015-08-01' and (exitdate > '2015-09-01' or exitdate is null)) then 1 else 0 end) as aug15, ";
-                sql += "sum(case when (entrydate between '2015-09-01' and '2015-10-01') or (exitdate between '2015-09-01' and '2015-10-01') or (entrydate < '2015-09-01' and (exitdate > '2015-10-01' or exitdate is null)) then 1 else 0 end) as sep15, ";
-                sql += "sum(case when (entrydate between '2015-10-01' and '2015-11-01') or (exitdate between '2015-10-01' and '2015-11-01') or (entrydate < '2015-10-01' and (exitdate > '2015-11-01' or exitdate is null)) then 1 else 0 end) as oct15, ";
-                sql += "sum(case when (entrydate between '2015-11-01' and '2015-12-01') or (exitdate between '2015-11-01' and '2015-12-01') or (entrydate < '2015-11-01' and (exitdate > '2015-12-01' or exitdate is null)) then 1 else 0 end) as nov15, ";
-                sql += "sum(case when (entrydate between '2015-12-01' and '2016-01-01') or (exitdate between '2015-12-01' and '2016-01-01') or (entrydate < '2015-12-01' and (exitdate > '2016-01-01' or exitdate is null)) then 1 else 0 end) as dec15, ";
-                sql += "sum(case when (entrydate between '2016-01-01' and '2016-02-01') or (exitdate between '2016-01-01' and '2016-02-01') or (entrydate < '2016-01-01' and (exitdate > '2016-02-01' or exitdate is null)) then 1 else 0 end) as jan16, ";
-                sql += "sum(case when (entrydate between '2016-02-01' and '2016-03-01') or (exitdate between '2016-02-01' and '2016-03-01') or (entrydate < '2016-02-01' and (exitdate > '2016-03-01' or exitdate is null)) then 1 else 0 end) as feb16, ";
-                sql += "sum(case when (entrydate between '2016-03-01' and '2016-04-01') or (exitdate between '2016-03-01' and '2016-04-01') or (entrydate < '2016-03-01' and (exitdate > '2016-04-01' or exitdate is null)) then 1 else 0 end) as mar16, ";
-                sql += "sum(case when (entrydate between '2016-04-01' and '2016-05-01') or (exitdate between '2016-04-01' and '2016-05-01') or (entrydate < '2016-04-01' and (exitdate > '2016-05-01' or exitdate is null)) then 1 else 0 end) as apr16, ";
-                sql += "sum(case when (entrydate between '2016-05-01' and '2016-06-01') or (exitdate between '2016-05-01' and '2016-06-01') or (entrydate < '2016-05-01' and (exitdate > '2016-06-01' or exitdate is null)) then 1 else 0 end) as may16, ";
-                sql += "sum(case when (entrydate between '2016-06-01' and '2016-07-01') or (exitdate between '2016-06-01' and '2016-07-01') or (entrydate < '2016-06-01' and (exitdate > '2016-07-01' or exitdate is null)) then 1 else 0 end) as jun16, ";
-                sql += "sum(case when (entrydate between '2016-07-01' and '2016-08-01') or (exitdate between '2016-07-01' and '2016-08-01') or (entrydate < '2016-07-01' and (exitdate > '2016-08-01' or exitdate is null)) then 1 else 0 end) as jul16, ";
-                sql += "sum(case when (entrydate between '2016-08-01' and '2016-09-01') or (exitdate between '2016-08-01' and '2016-09-01') or (entrydate < '2016-08-01' and (exitdate > '2016-09-01' or exitdate is null)) then 1 else 0 end) as aug16, ";
-                sql += "sum(case when (entrydate between '2016-09-01' and '2016-10-01') or (exitdate between '2016-09-01' and '2016-10-01') or (entrydate < '2016-09-01' and (exitdate > '2016-10-01' or exitdate is null)) then 1 else 0 end) as sep16, ";
-                sql += "sum(case when (entrydate between '2016-10-01' and '2016-11-01') or (exitdate between '2016-10-01' and '2016-11-01') or (entrydate < '2016-10-01' and (exitdate > '2016-11-01' or exitdate is null)) then 1 else 0 end) as oct16, ";
-                sql += "sum(case when (entrydate between '2016-11-01' and '2016-12-01') or (exitdate between '2016-11-01' and '2016-12-01') or (entrydate < '2016-11-01' and (exitdate > '2016-12-01' or exitdate is null)) then 1 else 0 end) as nov16, ";
-                sql += "sum(case when (entrydate between '2016-12-01' and '2017-01-01') or (exitdate between '2016-12-01' and '2017-01-01') or (entrydate < '2016-12-01' and (exitdate > '2017-01-01' or exitdate is null)) then 1 else 0 end) as dec16 ";
-                sql += "from vehicle where entrydate is not null ";
-                sql += "group by id ";
-                sql += "order by entrydate ";
-
+                sql += "SELECT a.id, a.registration, a.site_id, 1 as onsite, to_char(d.as_of_date, 'dd/mm/yyyy') as stockdate ";
+                sql += "FROM ( ";
+                sql += "SELECT d::date AS as_of_date ";
+                sql += "FROM generate_series(date '2016-01-01', date '2018-12-31', interval '1 day') d ";
+                sql += ") d ";
+                sql += "JOIN vehicle a ON d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null ";
+                sql += "JOIN LATERAL ( ";
+                sql += "SELECT id ";
+                sql += "FROM vehicle ";
+                sql += "WHERE d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null ";
+                sql += "ORDER BY as_of_date DESC ";
+                sql += "   LIMIT 1 ";
+                sql += "   ) b ON d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null ";
+                sql += "ORDER BY a.entrydate, d.as_of_date ";
 
                 LogMsg("On Site Records SQL " + sql);
 
@@ -2101,6 +2121,60 @@ namespace PhocasData
 
                 Console.WriteLine("Written On Site Records Data");
                 LogMsg("Written On Site Records Data");
+            }
+
+            catch (NpgsqlException ne)
+            {
+                Console.WriteLine("SQL Error {0}", ne.Message);
+                LogMsg(ne);
+            }
+
+            catch (IOException ie)
+            {
+                Console.WriteLine("IOException Error {0}", ie.Message);
+                LogMsg(ie);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine("Upload File Failed, status {0}", we.Message);
+                LogMsg(we);
+            }
+
+            finally
+            {
+                conn.Close();
+            }
+
+        }
+
+        private static void GetGeoDataCSV()
+        {
+            try
+            {
+                conn.Open();
+                string sql = null;
+
+                sql += "select vehicle_id, sale_id, ipaddress,";
+                sql += "case when position('country_code' IN geodata) > -1 then substring(geodata from (position('country_code' in geodata) + 15) for 2) else '' end as countrycode,";
+                sql += "case when position('region_code' in geodata) > -1 then substring(geodata from (position('region_code' in geodata) + 14) for 3) else '' end as regioncode,";
+                sql += "case when position('zip_code' in geodata) > -1 then substring(geodata from (position('zip_code' in geodata) + 11) for 4) else '' end as postcode ";
+                sql += "from webanalytics ";
+                sql += "group by sale_id, ipaddress, vehicle_id, geodata order by sale_id, ipaddress, vehicle_id";
+
+                LogMsg("Geodata SQL " + sql);
+
+                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlDataReader dr = command.ExecuteReader();
+
+                Console.WriteLine("Extracted Geo Data");
+                LogMsg("Extracted Geo Data");
+
+                String fn = csvDataPath + "geodata" + ".csv";
+
+                WriteCSV(fn, dr);
+
+                Console.WriteLine("Written Geo Data");
+                LogMsg("Written Geo Data");
             }
 
             catch (NpgsqlException ne)
