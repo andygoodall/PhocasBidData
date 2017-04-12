@@ -385,7 +385,7 @@ namespace PhocasData
                 sql += "vehicle.\"glasstradeprice\" AS vehicle_glasstradeprice,";
                 sql += "vehicle.\"lastserviced\" AS vehicle_lastserviced,";
                 sql += "vehicle.\"extraspec\" AS vehicle_extraspec,";
-                sql += "vehicle.\"co2emission\" AS vehicle_co2emission,";
+                sql += "case when vehicle.\"co2emission\" is null then 0 else vehicle.\"co2emission\" end AS vehicle_co2emission,";
                 sql += "vehicle.\"yearofmanufacture\" AS vehicle_yearofmanufacture,";
                 sql += "vehicle.\"damagecost\" AS vehicle_damagecost,";
                 sql += "vehicle.\"buyitnow\" AS vehicle_buyitnow,";
@@ -450,14 +450,15 @@ namespace PhocasData
                 sql += "case when inspection.grade is null or LENGTH(inspection.grade) < 1 or inspection.result is null or LENGTH(inspection.result) < 1 then 'N/A' ";
                 sql += " else (concat(inspection.grade,left(inspection.result,1))) end AS combined_grade, ";
                 sql += "case when inspection.costedreport_id is null then '' else '" + imgixurl + "' || image.externalpath end as costedpdfurl, ";
-                sql += "vehicle.withdrawn as withdrawn ";
+                sql += "case when vehicle.withdrawn is true then 1 else 0 end as withdrawn, ";
+                sql += "case when (inspection.date is not null and vehicle.entrydate is not null) then DATE_PART('day', inspection.date -  vehicle.entrydate) * 24 + ";
+                sql += "DATE_PART('hour', inspection.date -  vehicle.entrydate) end AS time_to_inspect ";
                 sql += "FROM ";
                 sql += "\"public\".\"vehicle\" vehicle INNER JOIN \"public\".\"sales_per_vehicle\" sales_per_vehicle ON vehicle.\"id\" = sales_per_vehicle.\"vehicle_id\" ";
                 sql += "LEFT OUTER JOIN \"public\".\"inspection\" inspection ON vehicle.\"primaryinspection_id\" = inspection.\"id\"   ";
                 sql += "LEFT OUTER JOIN public.image image ON inspection.costedreport_id = image.id   ";
                 sql += " WHERE";
                 sql += " vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += " ORDER BY vehicle.\"id\"";
 
@@ -1022,7 +1023,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "(commission * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "commission as netcost, ";
@@ -1046,7 +1047,6 @@ namespace PhocasData
                 sql += "WHERE ";
                 sql += "commission > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "UNION ALL ";
                 sql += "SELECT ";
@@ -1054,7 +1054,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "(entryfee * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "entryfee as netcost, ";
@@ -1078,7 +1078,6 @@ namespace PhocasData
                 sql += "WHERE ";
                 sql += "entryfee > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "UNION ALL ";
                 sql += "SELECT ";
@@ -1086,7 +1085,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "(collection * (100 + sellerinvoicevehicleentry.vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "collection as netcost, ";
@@ -1110,7 +1109,6 @@ namespace PhocasData
                 sql += "WHERE ";
                 sql += "collection > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "UNION ALL ";
                 sql += "SELECT ";
@@ -1118,7 +1116,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "ben as netcost, ";
                 sql += "ben as netcost, ";
@@ -1142,7 +1140,6 @@ namespace PhocasData
                 sql += "WHERE ";
                 sql += "ben > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "UNION ALL ";
                 sql += "SELECT ";
@@ -1150,7 +1147,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "case when sellerinvoicevehicleentry_charges.charges_vatexempt = true then sellerinvoicevehicleentry_charges.charges_amount else (sellerinvoicevehicleentry_charges.charges_amount * ((100 + sellerinvoicevehicleentry.vatrate) / 100 ))::numeric(20,2) end as grosscost, ";
                 sql += "sellerinvoicevehicleentry_charges.charges_amount as netcost, ";
@@ -1174,7 +1171,6 @@ namespace PhocasData
                 sql += "INNER JOIN public.sellerinvoicevehicleentry_charges sellerinvoicevehicleentry_charges ON sellerinvoicevehicleentry_charges.sellerinvoicevehicleentry_id = sellerinvoicevehicleentry.id ";
                 sql += "WHERE rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "ORDER by sale_id, saleresult_lot, client_id ";
 
@@ -1241,7 +1237,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "buyerinvoicevehicleentry.vehiclegross as grosscost, ";
                 sql += "buyerinvoicevehicleentry.vehiclenet as netcost, ";
@@ -1268,7 +1264,6 @@ namespace PhocasData
                 sql += "WHERE   ";
                 sql += "saleresult.status = 1 ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "UNION ALL   ";
                 sql += "SELECT ";
@@ -1276,7 +1271,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "(indemnity * (100 + vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "indemnity as netcost, ";
@@ -1303,7 +1298,6 @@ namespace PhocasData
                 sql += "WHERE ";
                 sql += "indemnity > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "UNION ALL ";
                 sql += "SELECT ";
@@ -1311,7 +1305,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "(delivery * (100 + vatrate) / 100 )::numeric(20,2) as grosscost, ";
                 sql += "delivery as netcost, ";
@@ -1338,7 +1332,6 @@ namespace PhocasData
                 sql += "WHERE ";
                 sql += "delivery > 0 and rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "UNION ALL ";
                 sql += "SELECT ";
@@ -1346,7 +1339,7 @@ namespace PhocasData
                 sql += "sale.id as sale_id, ";
                 sql += "to_char(sale.start, 'dd/mm/yyyy') as sale_start, ";
                 sql += "sale.description as sale_description, ";
-                sql += "saleresult.lot as saleresult_lot, ";
+                sql += "case when saleresult.lot is null then 0 else saleresult.lot end as saleresult_lot, ";
                 sql += "saleresult.status as saleresult_status, ";
                 sql += "case when buyerinvoicevehicleentry_fees.fees_vatexempt = true then buyerinvoicevehicleentry_fees.fees_amount else (buyerinvoicevehicleentry_fees.fees_amount * ((100 + vatrate) / 100 ))::numeric(20,2) end as grosscost, ";
                 sql += "buyerinvoicevehicleentry_fees.fees_amount as netcost, ";
@@ -1373,7 +1366,6 @@ namespace PhocasData
                 sql += "INNER JOIN public.bive_extended bive_extended ON bive_extended.id = buyerinvoicevehicleentry.id ";
                 sql += "WHERE rescinded = false ";
                 sql += " and vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"status\" != -1 ";
                 sql += " and vehicle.\"entrydate\" is not null ";
                 sql += "ORDER by sale_id, saleresult_lot, client_id ";
 
@@ -1771,7 +1763,7 @@ namespace PhocasData
                 sql += "(sale.id) as sale_id,  ";
                 sql += "(to_char(sale.start, 'dd/mm/yyyy')) as sale_start,  ";
                 sql += "(sale.description) as sale_description,  ";
-                sql += "(saleresult.lot) as saleresult_lot,  ";
+                sql += "(case when saleresult.lot is null then 0 else saleresult.lot end) as saleresult_lot,  ";
                 sql += "(saleresult.status) as saleresult_status,  ";
                 sql += "(saleresult.closingprice) as saleresult_closingprice,  ";
                 sql += "(saleresult.salemethod) as saleresult_method,  ";
@@ -1792,8 +1784,8 @@ namespace PhocasData
                 sql += "(seller.id) as seller_id,  ";
                 sql += "(buyer.id) as buyer_id,  ";
                 sql += "(to_char(saleresult.soldstamp, 'dd/mm/yyyy')) as saleresult_soldstamp,  ";
-                sql += "(saleresult.webviews) as saleresult_webviews,  ";
-                sql += "(saleresult.uniquewebviews) as saleresult_uniquewebviews,  ";
+                sql += "(case when saleresult.webviews is null then 0 else saleresult.webviews end) as saleresult_webviews,  ";
+                sql += "(case when saleresult.uniquewebviews is null then 0 else saleresult.uniquewebviews end) as saleresult_uniquewebviews,  ";
                 sql += "(case when vehicle.damagecost is not null and saleresult.status = 1 then vehicle.damagecost else case when inspection.totaldamage is not null then inspection.totaldamage else 0 end end) as vehicledamage, ";
                 sql += "(case when vehicle.damagecost is not null and saleresult.status = 1 then 1 else case when inspection.totaldamage is not null then 1 else 0 end end) as vehicledamagecount, ";
                 sql += "(case when vehicle.mileage is not null and saleresult.status = 1 then vehicle.mileage else 0 end) as soldvehiclemileage, ";
@@ -2092,20 +2084,24 @@ namespace PhocasData
 
                 // Find all Vehicle entry dates
 
+
                 sql += "SELECT a.id, a.registration, a.site_id, 1 as onsite, to_char(d.as_of_date, 'dd/mm/yyyy') as stockdate ";
-                sql += "FROM ( ";
-                sql += "SELECT d::date AS as_of_date ";
-                sql += "FROM generate_series(date '2016-01-01', date '2018-12-31', interval '1 day') d ";
-                sql += ") d ";
-                sql += "JOIN vehicle a ON d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null ";
-                sql += "JOIN LATERAL ( ";
-                sql += "SELECT id ";
-                sql += "FROM vehicle ";
-                sql += "WHERE d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null ";
-                sql += "ORDER BY as_of_date DESC ";
-                sql += "   LIMIT 1 ";
-                sql += "   ) b ON d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null ";
-                sql += "ORDER BY a.entrydate, d.as_of_date ";
+                sql += "FROM (  ";
+                sql += "SELECT d::date AS as_of_date  ";
+                sql += "FROM generate_series(date '2016-01-01', now(), interval '1 day') d  ";
+                sql += ") d  ";
+                sql += "JOIN vehicle a ON (d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null) or ";
+                sql += "(d.as_of_date > a.entrydate and a.exitdate is null) ";
+                sql += "JOIN LATERAL (  ";
+                sql += "SELECT id  ";
+                sql += "FROM vehicle  ";
+                sql += "WHERE (d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null) or ";
+                sql += "(d.as_of_date > a.entrydate and a.exitdate is null) ";
+                sql += "ORDER BY as_of_date DESC  ";
+                sql += "LIMIT 1  ";
+                sql += ") b ON (d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null) or ";
+                sql += "(d.as_of_date > a.entrydate and a.exitdate is null) ";
+                sql += "ORDER BY a.entrydate, d.as_of_date  ";
 
                 LogMsg("On Site Records SQL " + sql);
 
@@ -2154,7 +2150,7 @@ namespace PhocasData
                 conn.Open();
                 string sql = null;
 
-                sql += "select vehicle_id, sale_id, ipaddress,";
+                sql += "select vehicle_id, case when sale_id is null then 0 else sale_id end as sale_id, ipaddress,";
                 sql += "case when position('country_code' IN geodata) > -1 then substring(geodata from (position('country_code' in geodata) + 15) for 2) else '' end as countrycode,";
                 sql += "case when position('region_code' in geodata) > -1 then substring(geodata from (position('region_code' in geodata) + 14) for 3) else '' end as regioncode,";
                 sql += "case when position('zip_code' in geodata) > -1 then substring(geodata from (position('zip_code' in geodata) + 11) for 4) else '' end as postcode ";
