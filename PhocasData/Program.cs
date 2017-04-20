@@ -199,6 +199,9 @@ namespace PhocasData
             // Generate Geo Data CSV
             GetGeoDataCSV();
 
+            // Generate Naughty Vehicle CSV
+            GetNaughtyVehiclesCSV();
+
             DateTime end = DateTime.Now;
             Console.WriteLine("Completed data extract " + end);
             log.Info("Completed data extract " + end);
@@ -451,8 +454,9 @@ namespace PhocasData
                 sql += " else (concat(inspection.grade,left(inspection.result,1))) end AS combined_grade, ";
                 sql += "case when inspection.costedreport_id is null then '' else '" + imgixurl + "' || image.externalpath end as costedpdfurl, ";
                 sql += "case when vehicle.withdrawn is true then 1 else 0 end as withdrawn, ";
-                sql += "case when (inspection.date is not null and vehicle.entrydate is not null) then DATE_PART('day', inspection.date -  vehicle.entrydate) * 24 + ";
-                sql += "DATE_PART('hour', inspection.date -  vehicle.entrydate) end AS time_to_inspect ";
+                sql += "case when (inspection.date is not null and vehicle.entrydate is not null) then DATE_PART('day', inspection.date - vehicle.entrydate) * 24 * 60 + ";
+                sql += "DATE_PART('hour', inspection.date - vehicle.entrydate) * 60   + ";
+                sql += "DATE_PART('minute', inspection.date - vehicle.entrydate)end AS time_to_inspect ";
                 sql += "FROM ";
                 sql += "\"public\".\"vehicle\" vehicle INNER JOIN \"public\".\"sales_per_vehicle\" sales_per_vehicle ON vehicle.\"id\" = sales_per_vehicle.\"vehicle_id\" ";
                 sql += "LEFT OUTER JOIN \"public\".\"inspection\" inspection ON vehicle.\"primaryinspection_id\" = inspection.\"id\"   ";
@@ -584,17 +588,20 @@ namespace PhocasData
 
                 // Find all Sales
                 sql = "SELECT ";
-                sql += "sale.\"id\" AS Sale_id,";
-                sql += "sale.\"description\" AS sale_description,";
-                sql += "to_char(sale.start, 'dd/mm/yyyy') AS sale_start,";
-                sql += "sale.\"site_id\" AS sale_site_id,";
-                sql += "sale.\"hall_hall\" AS sale_hall,";
-                sql += "DATE(start) as dstart,";
-                sql += "case when EXTRACT(HOUR from start) < 12 then 'AM' else (case when EXTRACT(HOUR from start) < 16 then 'PM' else 'EVENING' end) end as hstart,";
-                sql += "initcap(to_char(start, 'dy')) as day";
-                sql += " FROM ";
-                sql += "sale";
-                sql += " ORDER BY sale.\"id\"";
+                sql += "sale.id AS Sale_id, ";
+                sql += "sale.description AS sale_description, ";
+                sql += "to_char(sale.start, 'dd/mm/yyyy') AS sale_start, ";
+                sql += "sale.site_id AS sale_site_id, ";
+                sql += "sale.hall_hall AS sale_hall, ";
+                sql += "DATE(start) as dstart, ";
+                sql += "case when EXTRACT(HOUR from start) < 12 then 'AM' else (case when EXTRACT(HOUR from start) < 16 then 'PM' else 'EVENING' end) end as hstart, ";
+                sql += "initcap(to_char(start, 'dy')) as day, ";
+                sql += "count(distinct buyer_id) as uniquebuyers ";
+                sql += "FROM  ";
+                sql += "sale ";
+                sql += "INNER JOIN saleresult saleresult ON sale.id = saleresult.sale_id   ";
+                sql += "GROUP by sale.id ";
+                sql += "ORDER BY sale.id ";
 
                 LogMsg("Sale SQL " + sql);
 
@@ -1759,57 +1766,67 @@ namespace PhocasData
 
                 // Find all Detailed Sale Results
                 sql = "SELECT ";
-                sql += "(sale.site_id) as sale_site_id,  ";
-                sql += "(sale.id) as sale_id,  ";
-                sql += "(to_char(sale.start, 'dd/mm/yyyy')) as sale_start,  ";
-                sql += "(sale.description) as sale_description,  ";
-                sql += "(case when saleresult.lot is null then 0 else saleresult.lot end) as saleresult_lot,  ";
-                sql += "(saleresult.status) as saleresult_status,  ";
-                sql += "(saleresult.closingprice) as saleresult_closingprice,  ";
-                sql += "(saleresult.salemethod) as saleresult_method,  ";
-                sql += "(vehicle.registration) as vehicle_registration,  ";
-                sql += "(vehicle.id) as vehicle_id,  ";
-                sql += "(vehicle.calculatedpricing_clean) as vehicle_calculatedpricing_clean,  ";
-                sql += "(vehicle.pricing_reserveprice) as vehicle_pricing_reserveprice,  ";
-                sql += "(seller.accountnumber) as seller_accountnumber,  ";
-                sql += "(seller.name) as seller_name,  ";
-                sql += "(buyer.accountnumber) as buyer_accountnumber,  ";
-                sql += "(buyer.name) as buyer_name,  ";
-                sql += "(case when vehicle.calculatedpricing_clean is not null and saleresult.status = 1 then saleresult.closingprice else 0.0 end) as soldcapclean,  ";
-                sql += "(case when vehicle.pricing_reserveprice is not null  and saleresult.status = 1 then saleresult.closingprice else 0.0 end) as soldreserve,  ";
-                sql += "(case when saleresult.closingprice is not null and saleresult.status = 1 then vehicle.pricing_reserveprice else 0.0 end) as reserveclosing,  ";
-                sql += "(case when saleresult.closingprice is not null and saleresult.status = 1 then vehicle.calculatedpricing_clean else 0.0 end) as soldclosing,  ";
-                sql += "(case when vehicle.calculatedpricing_average is not null and saleresult.status = 1 then saleresult.closingprice else 0.0 end) as soldcapaverage,  ";
-                sql += "(case when saleresult.closingprice is not null and saleresult.status = 1 then vehicle.calculatedpricing_average else 0.0 end) as capaveragesold,  ";
-                sql += "(seller.id) as seller_id,  ";
-                sql += "(buyer.id) as buyer_id,  ";
-                sql += "(to_char(saleresult.soldstamp, 'dd/mm/yyyy')) as saleresult_soldstamp,  ";
-                sql += "(case when saleresult.webviews is null then 0 else saleresult.webviews end) as saleresult_webviews,  ";
-                sql += "(case when saleresult.uniquewebviews is null then 0 else saleresult.uniquewebviews end) as saleresult_uniquewebviews,  ";
-                sql += "(case when vehicle.damagecost is not null and saleresult.status = 1 then vehicle.damagecost else case when inspection.totaldamage is not null then inspection.totaldamage else 0 end end) as vehicledamage, ";
-                sql += "(case when vehicle.damagecost is not null and saleresult.status = 1 then 1 else case when inspection.totaldamage is not null then 1 else 0 end end) as vehicledamagecount, ";
-                sql += "(case when vehicle.mileage is not null and saleresult.status = 1 then vehicle.mileage else 0 end) as soldvehiclemileage, ";
-                sql += "(case when vehicle.mileage is not null and saleresult.status = 1 then 1 else 0 end) as soldvehiclemileagecount, ";
-                sql += "sales_per_vehicle.count as sales_per_vehicle, ";
-                sql += "extract('days' from (NOW() - vehicle.firstregistration)) as age, ";
-                sql += "inspection.grade as grade, ";
-                sql += "case when saleresult.status = 0 then 1 else 0 end as enteredcount, ";
-                sql += "case when saleresult.status = 1 then 1 else 0 end as soldcount, ";
-                sql += "case when saleresult.status = 2 then 1 else 0 end as unsoldcount, ";
-                sql += "case when saleresult.status = 3 then 1 else 0 end as provisionalcount, ";
-                sql += "case when saleresult.status = 1 and sales_per_vehicle.count = 1 then 1 else 0 end as firsttimesale ";
-                sql += "FROM  ";
-                sql += "public.vehicle vehicle INNER JOIN public.client seller ON seller.id = vehicle.seller_id  ";
-                sql += "INNER JOIN public.saleresult saleresult ON vehicle.id = saleresult.vehicle_id  ";
-                sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id  ";
-                sql += "LEFT OUTER JOIN public.client buyer ON saleresult.buyer_id = buyer.id  ";
-                sql += "LEFT OUTER JOIN public.inspection inspection ON vehicle.primaryinspection_id = inspection.id  ";
-                sql += "LEFT OUTER JOIN public.sales_per_vehicle sales_per_vehicle ON vehicle.id = sales_per_vehicle.vehicle_id  ";
-                sql += " WHERE ";
-                sql += " vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
-                sql += " and vehicle.\"entrydate\" is not null ";
-                sql += "ORDER by sale.id, saleresult.lot  ";
-                    
+                sql += "min(sale.site_id) as sale_site_id,  ";
+                sql += "min(sale.id) as sale_id,    ";
+                sql += "min(to_char(sale.start, 'dd/mm/yyyy')) as sale_start,    ";
+                sql += "min(sale.description) as sale_description,    ";
+                sql += "min(case when saleresult.lot is null then 0 else saleresult.lot end) as saleresult_lot,    ";
+                sql += "min(saleresult.status) as saleresult_status,    ";
+                sql += "min(saleresult.closingprice) as saleresult_closingprice,    ";
+                sql += "min(saleresult.salemethod) as saleresult_method,    ";
+                sql += "min(vehicle.registration) as vehicle_registration,    ";
+                sql += "min(vehicle.id) as vehicle_id,    ";
+                sql += "min(vehicle.calculatedpricing_clean) as vehicle_calculatedpricing_clean,    ";
+                sql += "min(vehicle.pricing_reserveprice) as vehicle_pricing_reserveprice,    ";
+                sql += "min(seller.accountnumber) as seller_accountnumber,    ";
+                sql += "min(seller.name) as seller_name,    ";
+                sql += "min(buyer.accountnumber) as buyer_accountnumber,    ";
+                sql += "min(buyer.name) as buyer_name,    ";
+                sql += "min(case when vehicle.calculatedpricing_clean is not null and saleresult.status = 1 then saleresult.closingprice else 0.0 end) as soldcapclean,    ";
+                sql += "min(case when vehicle.pricing_reserveprice is not null  and saleresult.status = 1 then saleresult.closingprice else 0.0 end) as soldreserve,    ";
+                sql += "min(case when saleresult.closingprice is not null and saleresult.status = 1 then vehicle.pricing_reserveprice else 0.0 end) as reserveclosing,    ";
+                sql += "min(case when saleresult.closingprice is not null and saleresult.status = 1 then vehicle.calculatedpricing_clean else 0.0 end) as soldclosing,    ";
+                sql += "min(case when vehicle.calculatedpricing_average is not null and saleresult.status = 1 then saleresult.closingprice else 0.0 end) as soldcapaverage,   ";
+                sql += "min(case when saleresult.closingprice is not null and saleresult.status = 1 then vehicle.calculatedpricing_average else 0.0 end) as capaveragesold,    ";
+                sql += "min(seller.id) as seller_id,    ";
+                sql += "min(buyer.id) as buyer_id,    ";
+                sql += "min(to_char(saleresult.soldstamp, 'dd/mm/yyyy')) as saleresult_soldstamp,    ";
+                sql += "min(case when saleresult.webviews is null then 0 else saleresult.webviews end) as saleresult_webviews,    ";
+                sql += "min(case when saleresult.uniquewebviews is null then 0 else saleresult.uniquewebviews end) as saleresult_uniquewebviews,    ";
+                sql += "min(case when vehicle.damagecost is not null and saleresult.status = 1 then vehicle.damagecost else case when inspection.totaldamage is not null then inspection.totaldamage else 0 end end) as vehicledamage,   ";
+                sql += "min(case when vehicle.damagecost is not null and saleresult.status = 1 then 1 else case when inspection.totaldamage is not null then 1 else 0 end end) as vehicledamagecount,   ";
+                sql += "min(case when vehicle.mileage is not null and saleresult.status = 1 then vehicle.mileage else 0 end) as soldvehiclemileage,   ";
+                sql += "min(case when vehicle.mileage is not null and saleresult.status = 1 then 1 else 0 end) as soldvehiclemileagecount,   ";
+                sql += "min(sales_per_vehicle.count) as sales_per_vehicle,   ";
+                sql += "min(extract('days' from (NOW() - vehicle.firstregistration))) as age,   ";
+                sql += "min(inspection.grade) as grade,   ";
+                sql += "min(case when saleresult.status = 0 then 1 else 0 end) as enteredcount,   ";
+                sql += "min(case when saleresult.status = 1 then 1 else 0 end) as soldcount,   ";
+                sql += "min(case when saleresult.status = 2 then 1 else 0 end) as unsoldcount,   ";
+                sql += "min(case when saleresult.status = 3 then 1 else 0 end) as provisionalcount,  ";
+                sql += "min(case when saleresult.status = 1 and sales_per_vehicle.count = 1 then 1 else 0 end) as firsttimesale,   ";
+                sql += "min(case when vehicle.onhold is true then 1 else 0 end) as onholdcount,   ";
+                sql += "min(case when vehicle.withdrawn is true then 1 else 0 end) as withdrawncount,   ";
+                sql += "min(case when vehicle.exitdate is null then (date_part('day',age(NOW(), vehicle.entrydate))) else (date_part('day',age(vehicle.exitdate, vehicle.entrydate))) end) as daysonsite,   ";
+                sql += "min(case when saleresult.salemethod = 'Physical' then 1 else 0 end) as physicalcount,   ";
+                sql += "min(case when saleresult.salemethod = 'Online' then 1 else 0 end) as onlinecount,   ";
+                sql += "min(case when saleresult.salemethod = 'BidBuyNow' then 1 else 0 end) as bidbuynowcount,   ";
+                sql += "min(EXTRACT(EPOCH from (stamp - entrydate)) / 60)::integer as timetoweb,      ";
+                sql += "min(case when inspection.grade is null and vehicle.exitdate is null and vehicle.withdrawn is false and vehicle.onhold is false then 0 else 1 end) as inspected    "; 
+                sql += "FROM    ";
+                sql += "public.vehicle vehicle INNER JOIN public.client seller ON seller.id = vehicle.seller_id    ";
+                sql += "INNER JOIN public.saleresult saleresult ON vehicle.id = saleresult.vehicle_id    ";
+                sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id    ";
+                sql += "INNER JOIN history on vehicle.id = history.vehicle_id and history.text like '%Edited vehicle (\"v5HeldState%' and history.stamp > vehicle.entrydate   ";
+                sql += "LEFT OUTER JOIN public.client buyer ON saleresult.buyer_id = buyer.id    ";
+                sql += "LEFT OUTER JOIN public.inspection inspection ON vehicle.primaryinspection_id = inspection.id    ";
+                sql += "LEFT OUTER JOIN public.sales_per_vehicle sales_per_vehicle ON vehicle.id = sales_per_vehicle.vehicle_id    ";
+                sql += "WHERE   ";
+                sql += "vehicle.vatstatus is not null and vehicle.make is not null  ";
+                sql += "and vehicle.entrydate is not null   ";
+                sql += "GROUP by vehicle.entrydate  ";
+                sql += "ORDER by vehicle.entrydate  ";
+
                 LogMsg("Detailed SaleResult SQL " + sql);
 
                 NpgsqlCommand command = new NpgsqlCommand(sql, conn);
@@ -2068,6 +2085,81 @@ namespace PhocasData
             }
 
         }
+
+        /**
+         * Created on 20/04/20167
+         * Gets "Naughty" vehicles for Phocas
+         * @author andy
+         *
+         */
+        private static void GetNaughtyVehiclesCSV()
+        {
+            try
+            {
+                conn.Open();
+                string sql = null;
+
+                // Find all naughty vehicles
+                sql = "select  ";
+                sql += "registration, ";
+                sql += "count as sales_per_vehicle, ";
+                sql += "entrydate, ";
+                sql += "exitdate, ";
+                sql += "saleresult.status, ";
+                sql += "onhold, ";
+                sql += "lastresult_sale_id ";
+                sql += "from  ";
+                sql += "vehicle inner join sales_per_vehicle on vehicle.id = sales_per_vehicle.vehicle_id ";
+                sql += "left outer join saleresult on saleresult.vehicle_id = vehicle.id and vehicle.lastresult_sale_id = saleresult.sale_id ";
+                sql += "where  ";
+                sql += "vehicle.exitdate is null and vehicle.entrydate is not null and ";
+                sql += "((saleresult.status <> 1 and sales_per_vehicle.count > 5) or ";
+                sql += "(vehicle.onhold is true and ((NOW()::date - vehicle.entrydate::date) > 14)) or ";
+                sql += "(saleresult.status = 1 and ((NOW()::date - saleresult.soldstamp::date) > 14)) or ";
+                sql += "(vehicle.withdrawn is true) or ";
+                sql += "(vehicle.entrydate is not null and vehicle.lastresult_sale_id is null and ((NOW()::date - vehicle.entrydate::date) > 14))) ";
+                sql += "order by sales_per_vehicle desc, entrydate ";
+
+                LogMsg("Naughty Vehicles SQL " + sql);
+
+                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlDataReader dr = command.ExecuteReader();
+
+                Console.WriteLine("Extracted Naughty Vehicles Data");
+                LogMsg("Extracted Transport Records Data");
+
+                String fn = csvDataPath + "transportrecords" + ".csv";
+
+                WriteCSV(fn, dr);
+
+                Console.WriteLine("Written Naughty Vehicles Data");
+                LogMsg("Written Naughty Vehicles Data");
+            }
+
+            catch (NpgsqlException ne)
+            {
+                Console.WriteLine("SQL Error {0}", ne.Message);
+                LogMsg(ne);
+            }
+
+            catch (IOException ie)
+            {
+                Console.WriteLine("IOException Error {0}", ie.Message);
+                LogMsg(ie);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine("Upload File Failed, status {0}", we.Message);
+                LogMsg(we);
+            }
+
+            finally
+            {
+                conn.Close();
+            }
+
+        }
+
 
         /**
          * Created on 10/11/2016.
