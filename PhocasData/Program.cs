@@ -149,6 +149,9 @@ namespace PhocasData
             vehiclestats += "ELSE 'AB Leeds' ";
             vehiclestats += "END AS Site_Location, ";
 
+            // Generate Stock CSV
+            GetStockCSV();
+
             // Generate Site CSV
             GetSiteCSV();
 
@@ -195,7 +198,7 @@ namespace PhocasData
 
             // Generate Transport Records CSV
             GetOnSiteRecordsCSV();
-
+            
             // Generate Geo Data CSV
             GetGeoDataCSV();
 
@@ -241,7 +244,7 @@ namespace PhocasData
 
             password = DecodeFrom64(lines[4]);
 
-            sqlconnection = "Server=" + lines[0] + ";Port=" + lines[1] + ";Database=" + lines[2] + ";User Id=" + lines[3] + ";Password=" + password + ";" + "CommandTimeout = 720;";
+            sqlconnection = "Server=" + lines[0] + ";Port=" + lines[1] + ";Database=" + lines[2] + ";User Id=" + lines[3] + ";Password=" + password + ";" + "CommandTimeout=1440;";
 
             conn = new NpgsqlConnection(sqlconnection);
 
@@ -254,7 +257,7 @@ namespace PhocasData
          * @author andy
          *
          */
-        private static void WriteCSV(string fn, NpgsqlDataReader dr)
+        private static StreamWriter WriteCSV(string fn, NpgsqlDataReader dr)
         {
             StringBuilder sb = new StringBuilder();
             using (StreamWriter writetext = new StreamWriter(fn))
@@ -262,6 +265,28 @@ namespace PhocasData
                 var columnNames = Enumerable.Range(0, dr.FieldCount).Select(dr.GetName).ToList();
                 sb.AppendLine(string.Join(",", columnNames));
                 writetext.Write(sb.ToString());
+                while (dr.Read())
+                {
+                    var fields = Enumerable.Range(0, dr.FieldCount).Select(dr.GetValue).ToList();
+                    sb.Clear();
+                    sb.AppendLine(string.Join(",", fields.Select(field => string.Concat("\"", field.ToString().Replace("\"", "\"\""), "\""))));
+                    writetext.Write(sb.ToString());
+                }
+                return writetext;
+            }
+        }
+
+        /**
+         * Created on 02/11/2016.
+         * Appends the contents of a DataReader to a .csv file line by line for Phocas
+         * @author andy
+         *
+         */
+        private static void AppendCSV(string fn, NpgsqlDataReader dr)
+        {
+            StringBuilder sb = new StringBuilder();
+            using (StreamWriter writetext = new StreamWriter(fn, true))
+            {
                 while (dr.Read())
                 {
                     var fields = Enumerable.Range(0, dr.FieldCount).Select(dr.GetValue).ToList();
@@ -325,14 +350,15 @@ namespace PhocasData
                 sql += "else 'Budget' end AS vehicle_age,";
                 sql += "vehicle.\"fuel\" AS vehicle_fuel, ";
                 sql += "CASE ";
-                sql += "WHEN fuel like '%Hybrid%' or fuel like '%HYB%' then 'Hybrid' ";
-                sql += "WHEN fuel = 'Diesel' or fuel = 'DIESEL' then 'Diesel' ";
-                sql += "WHEN fuel = 'Electric' or fuel = 'ELECTRIC' then 'Electric' ";
-                sql += "WHEN fuel = 'petrol' or fuel = 'Petrol' or fuel = 'PETROL' or fuel like '%Petrol/Bio-Ethanol%'then 'Petrol' ";
-                sql += "WHEN fuel = 'Petrol/ELE' or fuel = 'Petrol/Gas' or fuel = 'PETROL/GAS' or fuel = 'Petrol/LPG' or fuel = 'PETROL/ELE' then 'Petrol'	 ";
+                sql += "WHEN vehicle.fuel like '%Hybrid%' or vehicle.fuel like '%HYB%' then 'Hybrid' ";
+                sql += "WHEN vehicle.fuel = 'Diesel' or vehicle.fuel = 'DIESEL' then 'Diesel' ";
+                sql += "WHEN vehicle.fuel = 'Electric' or vehicle.fuel = 'ELECTRIC' then 'Electric' ";
+                sql += "WHEN vehicle.fuel = 'petrol' or vehicle.fuel = 'Petrol' or vehicle.fuel = 'PETROL' or vehicle.fuel like '%Petrol/Bio-Ethanol%'then 'Petrol' ";
+                sql += "WHEN vehicle.fuel = 'Petrol/ELE' or vehicle.fuel = 'Petrol/Gas' or vehicle.fuel = 'PETROL/GAS' or vehicle.fuel = 'Petrol/LPG' or vehicle.fuel = 'PETROL/ELE' then 'Petrol'	 ";
                 sql += "ELSE 'Others' ";
                 sql += "END AS FuelType, ";
-                sql += "vehicle.\"make\" AS vehicle_make,";
+                sql += "case when capcoding.\"manufacturer\" is not null then capcoding.\"manufacturer\" else vehicle.make end AS vehicle_make,";
+//                sql += "vehicle.make AS vehicle_make,";
                 sql += "case when vehicle.\"mileage\" is null then 1 else vehicle.\"mileage\" end AS vehicle_mileage,";
                 sql += "CASE ";
                 sql += "WHEN vehicle.mileage is null then 'Unknown'";
@@ -350,7 +376,8 @@ namespace PhocasData
                 sql += "WHEN vehicle.mileage > 90000 and vehicle.mileage <= 100000 then 'Up to 100,000'";
                 sql += "ELSE 'Over 100,000'";
                 sql += "END as Mileage_Band,";
-                sql += "vehicle.\"model\" AS vehicle_model,";
+                sql += "case when capcoding.\"longmodel\" is not null then capcoding.\"longmodel\" else vehicle.model end AS vehicle_model, ";
+//                sql += "vehicle.model AS vehicle_model, ";
                 sql += "to_char(vehicle.\"motexpiry\", 'dd/mm/yyyy') AS vehicle_motexpiry,";
                 sql += "vehicle.\"previouskeepers\" AS vehicle_previouskeepers,";
                 sql += "vehicle.\"previousregistration\" AS vehicle_previousregistration,";
@@ -416,9 +443,9 @@ namespace PhocasData
                 sql += "sales_per_vehicle.\"count\" AS sales_per_vehicle_count, ";
                 sql += "case when inspection.\"grade\" is null or LENGTH(inspection.grade) < 1 then  'N/A' else inspection.\"grade\" end AS inspection_grade, ";
                 sql += "case when inspection.\"result\" is null or LENGTH(inspection.result) < 1 then 'N/A' else inspection.\"result\" end AS inspection_result, ";
-                sql += "inspection.\"totaldamage\" AS inspection_totaldamage, ";
+                sql += "case when inspection.\"totaldamage\" is null then 0 else inspection.\"totaldamage\" end AS inspection_totaldamage, ";
                 sql += "case when inspection.\"nama\" is null or LENGTH(inspection.nama) < 1 then 'N/A' else inspection.\"nama\" end AS inspection_nama, ";
-                sql += "case when vehicle.exitdate is null then (date_part('day',age(NOW(), vehicle.entrydate))) else (date_part('day',age(vehicle.exitdate, vehicle.entrydate))) end as daysonsite, ";
+                sql += "case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int) else 0 end AS daysonsite, ";
                 sql += "case when vehicle.assured_id is null then 'Not Assured' else 'Assured' end AS vehicle_assured, ";
                 sql += "case when vehicle.colour is null then 'Not Specified' ";
                 sql += "when lower(vehicle.colour) like '%black%' then 'Black' ";
@@ -454,33 +481,58 @@ namespace PhocasData
                 sql += " else (concat(inspection.grade,left(inspection.result,1))) end AS combined_grade, ";
                 sql += "case when inspection.costedreport_id is null then '' else '" + imgixurl + "' || image.externalpath end as costedpdfurl, ";
                 sql += "case when vehicle.withdrawn is true then 1 else 0 end as withdrawn, ";
-                sql += "case when (inspection.date is not null and vehicle.entrydate is not null) then DATE_PART('day', inspection.date - vehicle.entrydate) * 24 * 60 + ";
-                sql += "DATE_PART('hour', inspection.date - vehicle.entrydate) * 60   + ";
-                sql += "DATE_PART('minute', inspection.date - vehicle.entrydate)end AS time_to_inspect ";
+                sql += "case when (inspection.date is not null and vehicle.entrydate is not null) then ((EXTRACT(epoch from age(inspection.date, vehicle.entrydate)) / 60)::int) else 0 end AS time_to_inspect, ";
+                sql += "inspection.inspector as inspection_inspector, ";
+                sql += "inspection.provider as inspection_provider, ";
+                sql += "case when transportrecord.inspectedoffsite is true then 1 else 0 end as inspectedoffsite, ";
+                sql += "case when vehicle.onhold is true then 1 else 0 end as onholdcount   ";
                 sql += "FROM ";
                 sql += "\"public\".\"vehicle\" vehicle INNER JOIN \"public\".\"sales_per_vehicle\" sales_per_vehicle ON vehicle.\"id\" = sales_per_vehicle.\"vehicle_id\" ";
                 sql += "LEFT OUTER JOIN \"public\".\"inspection\" inspection ON vehicle.\"primaryinspection_id\" = inspection.\"id\"   ";
                 sql += "LEFT OUTER JOIN public.image image ON inspection.costedreport_id = image.id   ";
+                sql += "LEFT OUTER JOIN public.transportrecord transportrecord ON transportrecord.vehicle_id = vehicle.id   ";
+                sql += "LEFT OUTER JOIN public.capcoding capcoding ON capcoding.vehiclecode = vehicle.capcode ";
                 sql += " WHERE";
                 sql += " vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
                 sql += " and vehicle.\"entrydate\" is not null ";
-                sql += " ORDER BY vehicle.\"id\"";
+                
+                String order = " ORDER BY vehicle.\"id\"";
+                String limit = " and vehicle.\"entrydate\" < '2016-06-01' ";
+                String query = sql + limit + order;
 
-                LogMsg("Vehicle SQL " + sql);
+                LogMsg("Vehicle SQL " + query);
 
-                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlCommand command = new NpgsqlCommand(query, conn);
                 NpgsqlDataReader dr = command.ExecuteReader();
 
-                Console.WriteLine("Extracted Vehicle Data");
-                LogMsg("Extracted Vehicle Data");
-
+                Console.WriteLine("Extracted Vehicle Data 1");
+                LogMsg("Extracted Vehicle Data 1");
 
                 String fn = csvDataPath + "vehicles" + ".csv";
 
-                WriteCSV(fn, dr);
+                StreamWriter sr = WriteCSV(fn, dr);
 
-                Console.WriteLine("Written Vehicle Data");
-                LogMsg("Written Vehicle Data");
+                Console.WriteLine("Written Vehicle Data 1");
+                LogMsg("Written Vehicle Data 1");
+
+                limit = " and vehicle.\"entrydate\" >= '2016-06-01' ";
+                query = sql + limit + order;
+
+                LogMsg("Vehicle SQL 2 " + query);
+
+                conn.Close();
+                conn.Open();
+
+                NpgsqlCommand command2 = new NpgsqlCommand(query, conn);
+                NpgsqlDataReader dr2 = command2.ExecuteReader();
+
+                Console.WriteLine("Extracted Vehicle Data 2");
+                LogMsg("Extracted Vehicle Data 2");
+
+                AppendCSV(fn, dr2);
+
+                Console.WriteLine("Written Vehicle Data 2");
+                LogMsg("Written Vehicle Data 2");
 
             }
 
@@ -1772,8 +1824,8 @@ namespace PhocasData
                 sql += "min(sale.description) as sale_description,    ";
                 sql += "min(case when saleresult.lot is null then 0 else saleresult.lot end) as saleresult_lot,    ";
                 sql += "min(saleresult.status) as saleresult_status,    ";
-                sql += "min(saleresult.closingprice) as saleresult_closingprice,    ";
-                sql += "min(saleresult.salemethod) as saleresult_method,    ";
+                sql += "min(case when saleresult.status = 1 then saleresult.closingprice else 0 end) as saleresult_closingprice,    ";
+                sql += "min(case when saleresult.status = 1 then saleresult.salemethod else '' end) as saleresult_method,    ";
                 sql += "min(vehicle.registration) as vehicle_registration,    ";
                 sql += "min(vehicle.id) as vehicle_id,    ";
                 sql += "min(vehicle.calculatedpricing_clean) as vehicle_calculatedpricing_clean,    ";
@@ -1804,28 +1856,32 @@ namespace PhocasData
                 sql += "min(case when saleresult.status = 1 then 1 else 0 end) as soldcount,   ";
                 sql += "min(case when saleresult.status = 2 then 1 else 0 end) as unsoldcount,   ";
                 sql += "min(case when saleresult.status = 3 then 1 else 0 end) as provisionalcount,  ";
-                sql += "min(case when saleresult.status = 1 and sales_per_vehicle.count = 1 then 1 else 0 end) as firsttimesale,   ";
+                sql += "max(case when saleresult.status = 1 and sales_per_vehicle.count = 1 then 1 else 0 end) as firsttimesale,   ";
                 sql += "min(case when vehicle.onhold is true then 1 else 0 end) as onholdcount,   ";
                 sql += "min(case when vehicle.withdrawn is true then 1 else 0 end) as withdrawncount,   ";
-                sql += "min(case when vehicle.exitdate is null then (date_part('day',age(NOW(), vehicle.entrydate))) else (date_part('day',age(vehicle.exitdate, vehicle.entrydate))) end) as daysonsite,   ";
+                sql += "min(case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int) else 0 end) AS daysonsite, ";
                 sql += "min(case when saleresult.salemethod = 'Physical' then 1 else 0 end) as physicalcount,   ";
                 sql += "min(case when saleresult.salemethod = 'Online' then 1 else 0 end) as onlinecount,   ";
                 sql += "min(case when saleresult.salemethod = 'BidBuyNow' then 1 else 0 end) as bidbuynowcount,   ";
-                sql += "min(EXTRACT(EPOCH from (stamp - entrydate)) / 60)::integer as timetoweb,      ";
-                sql += "min(case when inspection.grade is null and vehicle.exitdate is null and vehicle.withdrawn is false and vehicle.onhold is false then 0 else 1 end) as inspected    "; 
+                sql += "min(abs(EXTRACT(EPOCH from (stamp - entrydate)) / 60))::integer as timetoweb,      ";
+                sql += "min(case when inspection.grade is null and vehicle.exitdate is null and vehicle.withdrawn is false and vehicle.onhold is false then 0 else 1 end) as inspected,    "; 
+                sql += "min(bive_ext.total_charges_net) as buyerchargesnet,  ";
+                sql += "min(bive_ext.total_charges_gross) as buyerchargesgross  "; 
                 sql += "FROM    ";
                 sql += "public.vehicle vehicle INNER JOIN public.client seller ON seller.id = vehicle.seller_id    ";
                 sql += "INNER JOIN public.saleresult saleresult ON vehicle.id = saleresult.vehicle_id    ";
                 sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id    ";
-                sql += "INNER JOIN history on vehicle.id = history.vehicle_id and history.text like '%Edited vehicle (\"v5HeldState%' and history.stamp > vehicle.entrydate   ";
+                sql += "LEFT OUTER JOIN history on vehicle.id = history.vehicle_id and history.text like '%Edited vehicle%'   ";
                 sql += "LEFT OUTER JOIN public.client buyer ON saleresult.buyer_id = buyer.id    ";
                 sql += "LEFT OUTER JOIN public.inspection inspection ON vehicle.primaryinspection_id = inspection.id    ";
                 sql += "LEFT OUTER JOIN public.sales_per_vehicle sales_per_vehicle ON vehicle.id = sales_per_vehicle.vehicle_id    ";
+                sql += "LEFT OUTER JOIN public.buyerinvoicevehicleentry bive ON bive.vehicle_id = vehicle.id and bive.rescinded = false and saleresult.status = 1 ";
+                sql += "LEFT OUTER JOIN public.bive_extended bive_ext on bive.id = bive_ext.id ";
                 sql += "WHERE   ";
                 sql += "vehicle.vatstatus is not null and vehicle.make is not null  ";
                 sql += "and vehicle.entrydate is not null   ";
-                sql += "GROUP by vehicle.entrydate  ";
-                sql += "ORDER by vehicle.entrydate  ";
+                sql += "group by sale.id, saleresult.lot  ";
+                sql += "order by sale.id, saleresult.lot  ";
 
                 LogMsg("Detailed SaleResult SQL " + sql);
 
@@ -2103,8 +2159,8 @@ namespace PhocasData
                 sql = "select  ";
                 sql += "registration, ";
                 sql += "count as sales_per_vehicle, ";
-                sql += "entrydate, ";
-                sql += "exitdate, ";
+                sql += "to_char(vehicle.\"entrydate\", 'dd/mm/yyyy') AS vehicle_entrydate,";
+                sql += "to_char(vehicle.\"exitdate\", 'dd/mm/yyyy') AS vehicle_exitdate,";
                 sql += "saleresult.status, ";
                 sql += "onhold, ";
                 sql += "lastresult_sale_id ";
@@ -2160,6 +2216,69 @@ namespace PhocasData
 
         }
 
+
+        /**
+         * Created on 12/05/2017.
+         * Gets vehicles on site for Phocas
+         * @author andy
+         *
+         */
+        private static void GetStockCSV()
+        {
+            try
+            {
+                conn.Open();
+                string sql = null;
+
+                // Find all vehicles on site
+                sql += "select id, registration, site_id, lastresult_sale_id, ";
+                sql += "make, model, ";
+                sql += "to_char(vehicle.\"entrydate\", 'dd/mm/yyyy') AS vehicle_entrydate, ";
+                sql += "case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int) else 0 end AS daysonsite ";
+                sql += "from vehicle ";
+                sql += "where exitdate is null and entrydate is not null order by entrydate ";
+
+                LogMsg("Stock SQL " + sql);
+
+                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlDataReader dr = command.ExecuteReader();
+
+                Console.WriteLine("Extracted Stock Data");
+                LogMsg("Extracted Stock Data");
+
+
+                String fn = csvDataPath + "stock" + ".csv";
+
+                WriteCSV(fn, dr);
+
+                Console.WriteLine("Written Stock Data");
+                LogMsg("Written Stock Data");
+
+            }
+
+            catch (NpgsqlException ne)
+            {
+                Console.WriteLine("SQL Error {0}", ne.Message);
+                LogMsg(ne);
+            }
+
+            catch (IOException ie)
+            {
+                Console.WriteLine("IOException Error {0}", ie.Message);
+                LogMsg(ie);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine("Upload File Failed, status {0}", we.Message);
+                LogMsg(we);
+            }
+
+            finally
+            {
+                conn.Close();
+            }
+
+        }
 
         /**
          * Created on 10/11/2016.
@@ -2242,12 +2361,19 @@ namespace PhocasData
                 conn.Open();
                 string sql = null;
 
-                sql += "select vehicle_id, case when sale_id is null then 0 else sale_id end as sale_id, ipaddress,";
-                sql += "case when position('country_code' IN geodata) > -1 then substring(geodata from (position('country_code' in geodata) + 15) for 2) else '' end as countrycode,";
-                sql += "case when position('region_code' in geodata) > -1 then substring(geodata from (position('region_code' in geodata) + 14) for 3) else '' end as regioncode,";
-                sql += "case when position('zip_code' in geodata) > -1 then substring(geodata from (position('zip_code' in geodata) + 11) for 4) else '' end as postcode ";
-                sql += "from webanalytics ";
-                sql += "group by sale_id, ipaddress, vehicle_id, geodata order by sale_id, ipaddress, vehicle_id";
+                sql += "select ";
+                sql += "min(vehicle_id) as vehicle_id,  ";
+                sql += "min(to_char(timestamp, 'dd/mm/yyyy')) as timestamp,  ";
+                sql += "min(case when sale_id is null then 0 else sale_id end) as sale_id,   ";
+                sql += "min(ipaddress),  ";
+                sql += "min(username) as username,  ";
+                sql += "count(vehicle_id) as vehicleviews, ";
+                sql += "min((regexp_replace((case when position('country_code' IN geodata) > -1 then substring(geodata from (position('country_code' in geodata) + 15) for 2) else '' end), '[\"]', '', 'g'))) as countrycode,  ";
+                sql += "min((regexp_replace((case when position('region_code' IN geodata) > -1 then substring(geodata from (position('region_code' in geodata) + 14) for 3) else '' end), '[\",]', '', 'g'))) as regioncode,  ";
+                sql += "min((regexp_replace((case when position('zip_code' IN geodata) > -1 then substring(geodata from (position('zip_code' in geodata) + 11) for 6) else '' end), '[\",tim]', '', 'g'))) as postcode  ";
+                sql += "from webanalytics   ";
+                sql += "group by sale_id, ipaddress, vehicle_id ";
+                sql += "order by sale_id ";
 
                 LogMsg("Geodata SQL " + sql);
 
