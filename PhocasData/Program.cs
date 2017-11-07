@@ -61,7 +61,7 @@ namespace PhocasData
             vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '1 Year' and NOW() then 'Up to 1 year'  ";
             vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '2 Year' and NOW() then 'Up to 2 years'  ";
             vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '3 Year' and NOW() then 'Up to 3 years'  ";
-            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '4 Year' and NOW() then 'U to 4 years'  ";
+            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '4 Year' and NOW() then 'Up to 4 years'  ";
             vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '5 Year' and NOW() then 'Up to 5 years'  ";
             vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '6 Year' and NOW() then 'Up to 6 years'  ";
             vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '7 Year' and NOW() then 'Up to 7 years'  ";
@@ -70,28 +70,39 @@ namespace PhocasData
             vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '10 Year' and NOW() then 'Up to 10 years'  ";
             vehiclestats += "ELSE 'Over 10 year' ";
             vehiclestats += "End as Age_cat, ";
-            vehiclestats += "CASE  ";
-            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '2.5 Year' and NOW() then 'Late & Low'  ";
-            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '4.5 Year' and NOW() then 'Fleet Profile'  ";
-            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '6.5 Year' and NOW() then 'PX Young'  ";
-            vehiclestats += "WHEN firstregistration between NOW() - INTERVAL '10.5 Year' and NOW() then 'PX old'  ";
-            vehiclestats += "ELSE 'Budget' ";
-            vehiclestats += "End as Industry_Age_cat, ";
             vehiclestats += "CASE ";
-            vehiclestats += "WHEN bodystyle like '%Cabriolet%' or bodystyle like '%CABRIOLET%' then 'Cabriolet' ";
-            vehiclestats += "WHEN bodystyle like '%Convertible%' or bodystyle like '%CONVERTIBLE%' then 'Convertible' ";
-            vehiclestats += "WHEN bodystyle like '%Coupe%' or bodystyle like '%CABRIOLET%' then 'Coupe' ";
-            vehiclestats += "WHEN bodystyle = 'Double Cab Pick-up' or bodystyle = 'Double Cab Dropside' or bodystyle = 'Double Cab Tipper' or bodystyle = 'Double Chassis Cab' then 'Double Cab Pick-up' ";
-            vehiclestats += "WHEN bodystyle like '%Estate%' or bodystyle like '%ESTATE%' then 'Estate' ";
-            vehiclestats += "WHEN bodystyle like '%Hardtop%' then 'Cabriolet' ";
-            vehiclestats += "WHEN bodystyle like '%Hatchback%' or bodystyle like '%HATCHBACK%' then 'Hatchback' ";
-            vehiclestats += "WHEN bodystyle like '%High Volume/High Roof Van%' then 'High Volume/High Roof Van' ";
-            vehiclestats += "WHEN bodystyle = 'Medium Roof Van' then 'Medium Roof Van' ";
-            vehiclestats += "WHEN bodystyle like '%Roadster%' then 'Roadster' ";
-            vehiclestats += "WHEN bodystyle like '%Saloon%' or bodystyle like '%SALOON%' then 'Saloon' ";
-            vehiclestats += "WHEN bodystyle like '%Station Wagon%' then 'Station Wagon' ";
-            vehiclestats += "WHEN bodystyle like '%Van%' then 'Van' ";
-            vehiclestats += "ELSE 'Others' ";
+            vehiclestats += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '30 Month' and saleresult.soldstamp then 'Late & Low' ";
+            vehiclestats += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '54 Month' and saleresult.soldstamp then 'Fleet Profile'  ";
+            vehiclestats += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '78 Month' and saleresult.soldstamp then 'PX Young'  ";
+            vehiclestats += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '126 Month' and saleresult.soldstamp then 'PX Old'  ";
+            vehiclestats += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '9999 Month' and saleresult.soldstamp then 'Budget' ";
+            vehiclestats += "else 'Unsold' End as Industry_Age_cat, ";
+            vehiclestats += "CASE ";
+            vehiclestats += "WHEN lower(bodystyle) like '%cabriolet%' then 'Convertible' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%convertible%' then 'Convertible' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%soft-top%' then 'Convertible' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%coupe%' then 'Coupe' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%double cab pick-up%' or lower(bodystyle) like '%double cab dropside%' or " ;
+            vehiclestats += "     lower(bodystyle) like '%double cab tipper%' or LOWER(bodystyle) LIKE '%double chassis cab%' then 'Double Cab Pick-up' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%estate%' or lower(bodystyle) like '%tourer%' then 'Estate' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%hardtop%' then 'Convertible' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%hatchback%' then 'Hatchback' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%high volume/high roof van%' then 'High Roof Van' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%extra high roof%' then 'High Roof Van' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%medium roof van%' then 'Medium Roof Van' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%roadster%' then 'Convertible' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%saloon%' then 'Saloon' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%station wagon%' then 'Station Wagon' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%standard roof minibus%' then 'Minibus' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%minibus%' then 'Minibus' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%combi van%' then 'Combi Van' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%crew bus%' then 'Crew Bus' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%chassis cab%' then 'Drop Side' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%dropside%' then 'Drop Side' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%pick-up%' then 'Pick-up' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%mpv%' then 'Estate' ";
+            vehiclestats += "WHEN lower(bodystyle) like '%van%' then 'Van' ";
+            vehiclestats += "ELSE 'Other' ";
             vehiclestats += "END AS BodyStyle, ";
             vehiclestats += "CASE ";
             vehiclestats += "WHEN enginesizecc is null then 'Unknown' ";
@@ -107,12 +118,12 @@ namespace PhocasData
             vehiclestats += "END AS Engine_Size_cat, ";
             // DVLA Colours
             vehiclestats += "CASE 		 ";
-            vehiclestats += "when lower(vehicle.colour) like '%beige%' then 'Beige'  ";
-            vehiclestats += "when lower(vehicle.colour) like '%buff%' then 'Beige'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%beige%' then 'Bronze'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%buff%' then 'Bronze'  ";
             vehiclestats += "when lower(vehicle.colour) like '%black%' then 'Black'  ";
             vehiclestats += "when lower(vehicle.colour) like '%blue%' then 'Blue'  ";
             vehiclestats += "when lower(vehicle.colour) like '%bronze%' then 'Bronze' ";
-            vehiclestats += "when lower(vehicle.colour) like '%brown%' then 'Brown'  ";
+            vehiclestats += "when lower(vehicle.colour) like '%brown%' then 'Bronze'  ";
             vehiclestats += "when lower(vehicle.colour) like '%cream%' then 'Cream'  ";
             vehiclestats += "when lower(vehicle.colour) like '%gold%' then 'Gold'  ";
             vehiclestats += "when lower(vehicle.colour) like '%green%' then 'Green'  ";
@@ -145,9 +156,22 @@ namespace PhocasData
             vehiclestats += "CASE  ";
             vehiclestats += "WHEN sale.site_id = 1 THEN 'AB Chelmsford' ";
             vehiclestats += "WHEN sale.site_id = 659779 THEN 'AB Press Heath' ";
-            vehiclestats += "WHEN sale.site_id= 659780 THEN 'AB Westbury' ";
+            vehiclestats += "WHEN sale.site_id = 659780 THEN 'AB Westbury' ";
+            vehiclestats += "WHEN sale.site_id = 2360542 THEN 'AB Donington' ";
             vehiclestats += "ELSE 'AB Leeds' ";
             vehiclestats += "END AS Site_Location, ";
+
+            // Generate Mobile Stats
+//            GetMobileStatsCSV();
+
+            // Generate Availables CSV
+/*            GetAvailablesCSV();
+
+            // Generate Arrivals CSV
+            GetArrivalsCSV();
+
+            // Generate Departures CSV
+            GetDeparturesCSV();
 
             // Generate Stock CSV
             GetStockCSV();
@@ -166,12 +190,12 @@ namespace PhocasData
 
             // Generate Client CSV
             GetGroupCSV();
-
+*/
             // Generate Client CSV
             GetClientWithGroupCSV();
 
             // Generate Vehicle CSV
-            GetVehicleCSV();
+/*            GetVehicleCSV();
 
             // Generate SaleResult CSV
             //GetSaleResultCSV();
@@ -203,7 +227,7 @@ namespace PhocasData
             GetGeoDataCSV();
 
             // Generate Naughty Vehicle CSV
-            GetNaughtyVehiclesCSV();
+            GetNaughtyVehiclesCSV();*/
 
             DateTime end = DateTime.Now;
             Console.WriteLine("Completed data extract " + end);
@@ -316,9 +340,36 @@ namespace PhocasData
                 sql += "vehicle.\"id\" AS vehicle_id,";
                 sql += "vehicle.\"bodystyle\" AS vehicle_bodystyle,";
                 sql += "CASE ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%cabriolet%' then 'Convertible' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%convertible%' then 'Convertible' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%soft-top%' then 'Convertible' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%coupe%' then 'Coupe' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%double cab pick-up%' or lower(vehicle.bodystyle) like '%double cab dropside%' or ";
+                sql += "     lower(vehicle.bodystyle) like '%double cab tipper%' or LOWER(vehicle.bodystyle) LIKE '%double chassis cab%' then 'Double Cab Pick-up' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%estate%' or lower(vehicle.bodystyle) like '%tourer%' then 'Estate' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%hardtop%' then 'Convertible' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%hatchback%' then 'Hatchback' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%high volume/high roof van%' then 'High Roof Van' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%extra high roof%' then 'High Roof Van' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%medium roof van%' then 'Medium Roof Van' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%roadster%' then 'Convertible' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%saloon%' then 'Saloon' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%station wagon%' then 'Station Wagon' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%standard roof minibus%' then 'Minibus' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%minibus%' then 'Minibus' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%combi van%' then 'Combi Van' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%crew bus%' then 'Crew Bus' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%chassis cab%' then 'Drop Side' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%dropside%' then 'Drop Side' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%pick-up%' then 'Pick-up' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%mpv%' then 'Estate' ";
+                sql += "WHEN lower(vehicle.bodystyle) like '%van%' then 'Van' ";
+                sql += "ELSE 'Other' ";
+                sql += "END AS vehicle_standard_bodystyle,";
+/*                sql += "CASE ";
                 sql += "WHEN bodystyle like '%Cabriolet%' or bodystyle like '%CABRIOLET%' then 'Cabriolet' ";
                 sql += "WHEN bodystyle like '%Convertible%' or bodystyle like '%CONVERTIBLE%' then 'Convertible' ";
-                sql += "WHEN bodystyle like '%Coupe%' or bodystyle like '%CABRIOLET%' then 'Coupe' ";
+                sql += "WHEN bodystyle like '%Coupe%' or bodystyle like '%COUPE%' then 'Coupe' ";
                 sql += "WHEN bodystyle = 'Double Cab Pick-up' or bodystyle = 'Double Cab Dropside' or bodystyle = 'Double Cab Tipper' or bodystyle = 'Double Chassis Cab' then 'Double Cab Pick-up' ";
                 sql += "WHEN bodystyle like '%Estate%' or bodystyle like '%ESTATE%' then 'Estate' ";
                 sql += "WHEN bodystyle like '%Hardtop%' then 'Cabriolet' ";
@@ -331,6 +382,7 @@ namespace PhocasData
                 sql += "WHEN bodystyle like '%Van%' then 'Van' ";
                 sql += "ELSE 'Others' ";
                 sql += "END AS vehicle_standard_bodystyle,";
+ * */
                 sql += "vehicle.\"colour\" AS vehicle_colour,";
                 sql += "case when vehicle.\"doors\" is null then 0 else vehicle.\"doors\" end AS vehicle_doors,";
                 sql += "CASE ";
@@ -343,19 +395,20 @@ namespace PhocasData
                 sql += "to_char(vehicle.\"entrydate\", 'dd/mm/yyyy') AS vehicle_entrydate,";
                 sql += "to_char(vehicle.\"firstregistration\", 'dd/mm/yyyy') AS vehicle_firstregistration,";
                 sql += "CASE ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '30 Month' and NOW() then 'Late & Low' ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '54 Month' and NOW() then 'Fleet Profile' ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '78 Month' and NOW() then 'PX Young' ";
-                sql += "WHEN firstregistration between NOW() - INTERVAL '126 Month' and NOW() then 'PX Old' ";
-                sql += "else 'Budget' end AS vehicle_age,";
+                sql += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '30 Month' and saleresult.soldstamp then 'Late & Low' ";
+                sql += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '54 Month' and saleresult.soldstamp then 'Fleet Profile'  ";
+                sql += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '78 Month' and saleresult.soldstamp then 'PX Young'  ";
+                sql += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '126 Month' and saleresult.soldstamp then 'PX Old'  ";
+                sql += "WHEN saleresult.status=1 and firstregistration between saleresult.soldstamp - INTERVAL '9999 Month' and saleresult.soldstamp then 'Budget' ";
+                sql += "else 'Unsold' end AS vehicle_age,  "; 
                 sql += "vehicle.\"fuel\" AS vehicle_fuel, ";
                 sql += "CASE ";
-                sql += "WHEN vehicle.fuel like '%Hybrid%' or vehicle.fuel like '%HYB%' then 'Hybrid' ";
-                sql += "WHEN vehicle.fuel = 'Diesel' or vehicle.fuel = 'DIESEL' then 'Diesel' ";
-                sql += "WHEN vehicle.fuel = 'Electric' or vehicle.fuel = 'ELECTRIC' then 'Electric' ";
-                sql += "WHEN vehicle.fuel = 'petrol' or vehicle.fuel = 'Petrol' or vehicle.fuel = 'PETROL' or vehicle.fuel like '%Petrol/Bio-Ethanol%'then 'Petrol' ";
-                sql += "WHEN vehicle.fuel = 'Petrol/ELE' or vehicle.fuel = 'Petrol/Gas' or vehicle.fuel = 'PETROL/GAS' or vehicle.fuel = 'Petrol/LPG' or vehicle.fuel = 'PETROL/ELE' then 'Petrol'	 ";
-                sql += "ELSE 'Others' ";
+                sql += "WHEN lower(vehicle.fuel) like '%hyb%' or lower(vehicle.fuel) like '%gas bi%' then 'Hybrid/Electric' ";
+                sql += "WHEN lower(vehicle.fuel) = 'diesel' then 'Diesel' ";
+                sql += "WHEN lower(vehicle.fuel) = '%electric%' then 'Hybrid/Electric' ";
+                sql += "WHEN lower(vehicle.fuel) = 'petrol' then 'Petrol' ";
+                sql += "WHEN lower(vehicle.fuel) = 'petrol/ele' or lower(vehicle.fuel) = 'petrol/gas' or lower(vehicle.fuel) = 'petrol/lpg' or lower(vehicle.fuel) like '%petrol/bio-ethanol%' then 'Hybrid/Electric'	 ";
+                sql += "ELSE 'Hybrid/Electric' ";
                 sql += "END AS FuelType, ";
                 sql += "case when capcoding.\"manufacturer\" is not null then capcoding.\"manufacturer\" else vehicle.make end AS vehicle_make,";
 //                sql += "vehicle.make AS vehicle_make,";
@@ -445,7 +498,7 @@ namespace PhocasData
                 sql += "case when inspection.\"result\" is null or LENGTH(inspection.result) < 1 then 'N/A' else inspection.\"result\" end AS inspection_result, ";
                 sql += "case when inspection.\"totaldamage\" is null then 0 else inspection.\"totaldamage\" end AS inspection_totaldamage, ";
                 sql += "case when inspection.\"nama\" is null or LENGTH(inspection.nama) < 1 then 'N/A' else inspection.\"nama\" end AS inspection_nama, ";
-                sql += "case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int) else 0 end AS daysonsite, ";
+                sql += "case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int)else ((EXTRACT(epoch from age(NOW(), vehicle.entrydate)) / 86400)::int) end AS daysonsite, ";
                 sql += "case when vehicle.assured_id is null then 'Not Assured' else 'Assured' end AS vehicle_assured, ";
                 sql += "case when vehicle.colour is null then 'Not Specified' ";
                 sql += "when lower(vehicle.colour) like '%black%' then 'Black' ";
@@ -460,6 +513,7 @@ namespace PhocasData
                 sql += "when lower(vehicle.colour) like '%purple%' then 'Purple' ";
                 sql += "when lower(vehicle.colour) like '%magenta%' then 'Magenta' ";
                 sql += "when lower(vehicle.colour) like '%grey%' then 'Grey' ";
+                sql += "when lower(vehicle.colour) like '%gray%' then 'Grey' ";
                 sql += "when lower(vehicle.colour) like '%brown%' then 'Brown' ";
                 sql += "when lower(vehicle.colour) like '%beige%' then 'Beige' ";
                 sql += "when lower(vehicle.colour) like '%fire%' then 'Red' ";
@@ -485,13 +539,21 @@ namespace PhocasData
                 sql += "inspection.inspector as inspection_inspector, ";
                 sql += "inspection.provider as inspection_provider, ";
                 sql += "case when transportrecord.inspectedoffsite is true then 1 else 0 end as inspectedoffsite, ";
-                sql += "case when vehicle.onhold is true then 1 else 0 end as onholdcount   ";
+                sql += "case when vehicle.onhold is true then 1 else 0 end as onholdcount,   ";
+                sql += "case when vehicle.exitdate is null and vehicle.entrydate is not null and   ";
+                sql += "((saleresult.status <> 1 and sales_per_vehicle.count > 5) or   ";
+                sql += "(vehicle.onhold is true and ((NOW()::date - vehicle.entrydate::date) > 14)) or   ";
+                sql += "(saleresult.status = 1 and ((NOW()::date - saleresult.soldstamp::date) > 14)) or   ";
+                sql += "(vehicle.withdrawn is true) or   ";
+                sql += "(vehicle.entrydate is not null and vehicle.lastresult_sale_id is null and ((NOW()::date - vehicle.entrydate::date) > 14)))  then 1 else 0 end as naughty,  ";
+                sql += "inspection.inspectiontype as inspectiontype  ";
                 sql += "FROM ";
                 sql += "\"public\".\"vehicle\" vehicle INNER JOIN \"public\".\"sales_per_vehicle\" sales_per_vehicle ON vehicle.\"id\" = sales_per_vehicle.\"vehicle_id\" ";
                 sql += "LEFT OUTER JOIN \"public\".\"inspection\" inspection ON vehicle.\"primaryinspection_id\" = inspection.\"id\"   ";
                 sql += "LEFT OUTER JOIN public.image image ON inspection.costedreport_id = image.id   ";
                 sql += "LEFT OUTER JOIN public.transportrecord transportrecord ON transportrecord.vehicle_id = vehicle.id   ";
                 sql += "LEFT OUTER JOIN public.capcoding capcoding ON capcoding.vehiclecode = vehicle.capcode ";
+                sql += "LEFT OUTER JOIN public.saleresult saleresult ON saleresult.sale_id = vehicle.lastresult_sale_id and status = 1";
                 sql += " WHERE";
                 sql += " vehicle.\"vatstatus\" is not null and vehicle.\"make\" is not null";
                 sql += " and vehicle.\"entrydate\" is not null ";
@@ -722,7 +784,8 @@ namespace PhocasData
                 sql += " client.\"primarycontact_postcode\" AS client_primarycontact_postcode,";
                 sql += " client.\"primarycontact_mainphone\" AS client_primarycontact_mainphone,";
                 sql += " client.\"primarycontact_fax\" AS client_primarycontact_fax,";
-                sql += " client.\"creditlimit\" AS client_creditlimit ";
+                sql += " client.\"creditlimit\" AS client_creditlimit, ";
+                sql += " client.\"lastactivity\" AS client_lastactivity ";
                 sql += "FROM ";
                 sql += "  client ";
                 sql += "ORDER BY client.\"id\"";
@@ -799,10 +862,17 @@ namespace PhocasData
                 sql += " max(client_grouptag.groups_id) as clientgroup_group_id, ";
                 sql += " string_agg(grouptag.description, ',') as grouptag_description, ";
                 sql += " max(client.seller_type) AS client_seller_type, ";
-                sql += " max(client.buyer_type) AS client_buyer_type ";
+                sql += " max(client.buyer_type) AS client_buyer_type, ";
+                // turn into a date
+                sql += " max(client.lastactivity) AS client_lastactivity, ";
+                sql += " max(client.accountmanager_id) AS client_accountmanager_id ";
                 sql += "FROM ";
                 sql += " client LEFT OUTER JOIN client_grouptag client_grouptag ON client.id = client_grouptag.client_id ";
                 sql += " LEFT OUTER JOIN grouptag grouptag ON client_grouptag.groups_id = grouptag.id ";
+                sql += "WHERE  ";
+                sql += "lastactivity is not null and  ";
+                sql += "accountnumber not like 'TR' and accountnumber not like 'PR' and  accountnumber not like 'NB' and ";
+                sql += "accountnumber not like 'tr' and accountnumber not like 'pr' and accountnumber not like 'nb' ";
                 sql += "GROUP by client.id ";
                 sql += "ORDER BY client.id ";
 
@@ -1818,7 +1888,7 @@ namespace PhocasData
 
                 // Find all Detailed Sale Results
                 sql = "SELECT ";
-                sql += "min(sale.site_id) as sale_site_id,  ";
+                sql += "min(site.id) as site_id,  ";
                 sql += "min(sale.id) as sale_id,    ";
                 sql += "min(to_char(sale.start, 'dd/mm/yyyy')) as sale_start,    ";
                 sql += "min(sale.description) as sale_description,    ";
@@ -1850,7 +1920,7 @@ namespace PhocasData
                 sql += "min(case when vehicle.mileage is not null and saleresult.status = 1 then vehicle.mileage else 0 end) as soldvehiclemileage,   ";
                 sql += "min(case when vehicle.mileage is not null and saleresult.status = 1 then 1 else 0 end) as soldvehiclemileagecount,   ";
                 sql += "min(sales_per_vehicle.count) as sales_per_vehicle,   ";
-                sql += "min(extract('days' from (NOW() - vehicle.firstregistration))) as age,   ";
+                sql += "min(extract('days' from (saleresult.soldstamp - vehicle.firstregistration))) as age,   ";
                 sql += "min(inspection.grade) as grade,   ";
                 sql += "min(case when saleresult.status = 0 then 1 else 0 end) as enteredcount,   ";
                 sql += "min(case when saleresult.status = 1 then 1 else 0 end) as soldcount,   ";
@@ -1859,26 +1929,38 @@ namespace PhocasData
                 sql += "max(case when saleresult.status = 1 and sales_per_vehicle.count = 1 then 1 else 0 end) as firsttimesale,   ";
                 sql += "min(case when vehicle.onhold is true then 1 else 0 end) as onholdcount,   ";
                 sql += "min(case when vehicle.withdrawn is true then 1 else 0 end) as withdrawncount,   ";
-                sql += "min(case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int) else 0 end) AS daysonsite, ";
+                sql += "min(case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int) else ((EXTRACT(epoch from age(NOW(), vehicle.entrydate)) / 86400)::int) end) AS daysonsite, ";
                 sql += "min(case when saleresult.salemethod = 'Physical' then 1 else 0 end) as physicalcount,   ";
                 sql += "min(case when saleresult.salemethod = 'Online' then 1 else 0 end) as onlinecount,   ";
                 sql += "min(case when saleresult.salemethod = 'BidBuyNow' then 1 else 0 end) as bidbuynowcount,   ";
                 sql += "min(abs(EXTRACT(EPOCH from (stamp - entrydate)) / 60))::integer as timetoweb,      ";
                 sql += "min(case when inspection.grade is null and vehicle.exitdate is null and vehicle.withdrawn is false and vehicle.onhold is false then 0 else 1 end) as inspected,    "; 
                 sql += "min(bive_ext.total_charges_net) as buyerchargesnet,  ";
-                sql += "min(bive_ext.total_charges_gross) as buyerchargesgross  "; 
+                sql += "min(bive_ext.total_charges_gross) as buyerchargesgross,  ";
+                sql += "min(case when saleresult.status = 1 and vehicle.mot is not null then 1 else 0 end) as motcount,   ";
+                sql += "min(case when saleresult.status = 1 and vehicle.v5heldstate is not null and vehicle.v5heldstate != 'None' then 1 else 0 end) as v5count,   ";
+                sql += "min(case when saleresult.status = 1 and vehicle.servicehistory is not null and vehicle.servicehistory != 'None' then 1 else 0 end) as shcount,   ";
+                sql += "min(inspection.bodyplan) as inspectionbodyplan,  ";
+                sql += "(sum(case when lower(extraspec) like '%sat nav operational - yes%' or lower(extraspec) like '%sat nav working%' then 1 else 0 end)) as satnavworking, ";
+                sql += "(sum(case when lower(extraspec) like '%sat nav operational - no%' or lower(extraspec) like '%sat nav not working%' then 1 else 0 end)) as satnavnotworking, ";
+                sql += "(sum(case when lower(extraspec) like '%alloys%' then 1 else 0 end)) as alloys, ";
+                sql += "(sum(case when lower(colour) like '%metallic%' then 1 else 0 end )) as metallic, ";
+                sql += "(sum(case when lower(extraspec) like '%air con%' then 1 else 0 end)) as aircon,     ";
+                sql += "max(case when saleresult.status = 1 then extract('days' from (saleresult.soldstamp - firstregistration)) else 0 end) as soldvehicleage,   ";
+                sql += "min(case when saleresult.status = 1 then 1 else 0 end) as soldvehicleagecount   ";
                 sql += "FROM    ";
                 sql += "public.vehicle vehicle INNER JOIN public.client seller ON seller.id = vehicle.seller_id    ";
                 sql += "INNER JOIN public.saleresult saleresult ON vehicle.id = saleresult.vehicle_id    ";
-                sql += "INNER JOIN public.sale sale ON saleresult.sale_id = sale.id    ";
+                sql += "LEFT OUTER JOIN public.sale sale ON saleresult.sale_id = sale.id    ";
                 sql += "LEFT OUTER JOIN history on vehicle.id = history.vehicle_id and history.text like '%Edited vehicle%'   ";
                 sql += "LEFT OUTER JOIN public.client buyer ON saleresult.buyer_id = buyer.id    ";
                 sql += "LEFT OUTER JOIN public.inspection inspection ON vehicle.primaryinspection_id = inspection.id    ";
                 sql += "LEFT OUTER JOIN public.sales_per_vehicle sales_per_vehicle ON vehicle.id = sales_per_vehicle.vehicle_id    ";
                 sql += "LEFT OUTER JOIN public.buyerinvoicevehicleentry bive ON bive.vehicle_id = vehicle.id and bive.rescinded = false and saleresult.status = 1 ";
                 sql += "LEFT OUTER JOIN public.bive_extended bive_ext on bive.id = bive_ext.id ";
+                sql += "INNER JOIN public.site site ON vehicle.site_id = site.id    ";
                 sql += "WHERE   ";
-                sql += "vehicle.vatstatus is not null and vehicle.make is not null  ";
+                sql += "vehicle.make is not null  ";
                 sql += "and vehicle.entrydate is not null   ";
                 sql += "group by sale.id, saleresult.lot  ";
                 sql += "order by sale.id, saleresult.lot  ";
@@ -2157,12 +2239,13 @@ namespace PhocasData
 
                 // Find all naughty vehicles
                 sql = "select  ";
+                sql += "id as vehicle_id, ";
                 sql += "registration, ";
                 sql += "count as sales_per_vehicle, ";
                 sql += "to_char(vehicle.\"entrydate\", 'dd/mm/yyyy') AS vehicle_entrydate,";
                 sql += "to_char(vehicle.\"exitdate\", 'dd/mm/yyyy') AS vehicle_exitdate,";
                 sql += "saleresult.status, ";
-                sql += "onhold, ";
+                sql += "case when onhold is true then 1 else 0 end, ";
                 sql += "lastresult_sale_id ";
                 sql += "from  ";
                 sql += "vehicle inner join sales_per_vehicle on vehicle.id = sales_per_vehicle.vehicle_id ";
@@ -2184,7 +2267,7 @@ namespace PhocasData
                 Console.WriteLine("Extracted Naughty Vehicles Data");
                 LogMsg("Extracted Transport Records Data");
 
-                String fn = csvDataPath + "transportrecords" + ".csv";
+                String fn = csvDataPath + "naughty" + ".csv";
 
                 WriteCSV(fn, dr);
 
@@ -2216,6 +2299,402 @@ namespace PhocasData
 
         }
 
+        /**
+         * Created on 12/05/2017.
+         * Gets arrival dates for Phocas
+         * @author andy
+         *
+         */
+        private static void GetArrivalsCSV()
+        {
+            try
+            {
+                conn.Open();
+                string sql = null;
+
+                // Find all vehicles on site
+
+                sql += "SELECT d.date, ";
+                sql += "count(distinct ca.id) as charrivals, ";
+                sql += "count(distinct pa.id) as pharrivals, ";
+                sql += "count(distinct wa.id) as wearrivals,  ";
+                sql += "count(distinct la.id) as learrivals ";
+                sql += "FROM ( ";
+                sql += "    select to_char(date_trunc('day', (current_date - offs)), 'YYYY-MM-DD') ";
+                sql += "AS date  ";
+                sql += "FROM generate_series(0, 28, 7)  ";
+                sql += "AS offs ";
+                sql += ") d  ";
+                sql += "LEFT OUTER JOIN ( ";
+                sql += "SELECT id, entrydate FROM vehicle  ";
+                sql += "WHERE site_id=1 ";
+                sql += ") ca ";
+                sql += "ON (d.date=to_char(date_trunc('day', ca.entrydate), 'YYYY-MM-DD'))  ";
+                sql += "LEFT OUTER JOIN ( ";
+                sql += "SELECT id, entrydate FROM vehicle  ";
+                sql += "WHERE site_id=659780 ";
+                sql += ") wa ";
+                sql += "ON (d.date=to_char(date_trunc('day', wa.entrydate), 'YYYY-MM-DD'))  ";
+                sql += "LEFT OUTER JOIN ( ";
+                sql += "SELECT id, entrydate FROM vehicle  ";
+                sql += "WHERE site_id=659779 ";
+                sql += ") pa ";
+                sql += "ON (d.date=to_char(date_trunc('day', pa.entrydate), 'YYYY-MM-DD'))  ";
+                sql += "LEFT OUTER JOIN ( ";
+                sql += "SELECT id, entrydate FROM vehicle  ";
+                sql += "WHERE site_id=2360542 ";
+                sql += ") la ";
+                sql += "ON (d.date=to_char(date_trunc('day', la.entrydate), 'YYYY-MM-DD'))  ";
+                sql += "GROUP BY d.date ";
+
+                sql = "select vehicle.id as id, registration, site_id, lastresult_sale_id,  ";
+                sql += "case when capcoding.manufacturer is not null then capcoding.manufacturer else make end as make, ";
+                sql += "case when capcoding.shortmodel is not null then capcoding.shortmodel else model end as model, ";
+                sql += "to_char(vehicle.entrydate, 'dd/mm/yyyy') AS vehicle_entrydate,  ";
+                sql += "((EXTRACT(epoch from age(NOW(), vehicle.entrydate)) / 86400)::int) AS daysonsite, ";
+                sql += "case when saleresult.status is null then 1 else 0 end as awaitingcount,  ";
+                sql += "case when saleresult.status = 0 then 1 else 0 end as enteredcount,  ";
+                sql += "case when saleresult.status = 1 then 1 else 0 end as soldcount,  ";
+                sql += "case when saleresult.status = 2 then 1 else 0 end as unsoldcount,  ";
+                sql += "case when saleresult.status = 3 then 1 else 0 end as provisionalcount,  ";
+                sql += "case when onhold is true then 1 else 0 end as onhold, ";
+                sql += "case when withdrawn is true then 1 else 0 end as withdrawn, ";
+                sql += "pricing_closingprice,  ";
+                sql += "seller.accountnumber as selleraccountnumber,  ";
+                sql += "buyer.accountnumber as buyeraccountnumber,  ";
+                sql += "to_char(vehicle.exitdate, 'dd/mm/yyyy') AS vehicle_exitdate  ";
+                sql += "FROM ";
+                sql += "public.vehicle vehicle LEFT OUTER JOIN public.capcoding capcoding ON capcoding.vehiclecode = vehicle.capcode  ";
+                sql += "LEFT OUTER JOIN public.saleresult saleresult ON saleresult.vehicle_id = vehicle.id and saleresult.sale_id = vehicle.lastresult_sale_id ";
+                sql += "INNER JOIN public.client seller ON vehicle.seller_id = seller.id ";
+                sql += "LEFT OUTER JOIN public.client buyer ON vehicle.buyer_id = buyer.id ";
+                sql += "where entrydate is not null order by entrydate  ";
+
+
+
+                LogMsg("Arrivals SQL " + sql);
+
+                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlDataReader dr = command.ExecuteReader();
+
+                Console.WriteLine("Extracted Arrivals Data");
+                LogMsg("Extracted Arrivals Data");
+
+
+                String fn = csvDataPath + "arrivals" + ".csv";
+
+                WriteCSV(fn, dr);
+
+                Console.WriteLine("Written Arrivals Data");
+                LogMsg("Written Arrivals Data");
+
+            }
+
+            catch (NpgsqlException ne)
+            {
+                Console.WriteLine("SQL Error {0}", ne.Message);
+                LogMsg(ne);
+            }
+
+            catch (IOException ie)
+            {
+                Console.WriteLine("IOException Error {0}", ie.Message);
+                LogMsg(ie);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine("Upload File Failed, status {0}", we.Message);
+                LogMsg(we);
+            }
+
+            finally
+            {
+                conn.Close();
+            }
+
+        }
+
+        /**
+         * Created on 12/05/2017.
+         * Gets departure dates for Phocas
+         * @author andy
+         *
+         */
+        private static void GetDeparturesCSV()
+        {
+            try
+            {
+                conn.Open();
+                string sql = null;
+
+                sql = "select vehicle.id as id, registration, site_id, lastresult_sale_id,  ";
+                sql += "case when capcoding.manufacturer is not null then capcoding.manufacturer else make end as make, ";
+                sql += "case when capcoding.shortmodel is not null then capcoding.shortmodel else model end as model, ";
+                sql += "to_char(vehicle.entrydate, 'dd/mm/yyyy') AS vehicle_entrydate,  ";
+                sql += "((EXTRACT(epoch from age(NOW(), vehicle.entrydate)) / 86400)::int) AS daysonsite, ";
+                sql += "case when saleresult.status is null then 1 else 0 end as awaitingcount,  ";
+                sql += "case when saleresult.status = 0 then 1 else 0 end as enteredcount,  ";
+                sql += "case when saleresult.status = 1 then 1 else 0 end as soldcount,  ";
+                sql += "case when saleresult.status = 2 then 1 else 0 end as unsoldcount,  ";
+                sql += "case when saleresult.status = 3 then 1 else 0 end as provisionalcount,  ";
+                sql += "case when onhold is true then 1 else 0 end as onhold, ";
+                sql += "case when withdrawn is true then 1 else 0 end as withdrawn, ";
+                sql += "pricing_closingprice,  ";
+                sql += "seller.accountnumber as selleraccountnumber,  ";
+                sql += "buyer.accountnumber as buyeraccountnumber,  ";
+                sql += "to_char(vehicle.exitdate, 'dd/mm/yyyy') AS vehicle_exitdate  ";
+                sql += "FROM ";
+                sql += "public.vehicle vehicle LEFT OUTER JOIN public.capcoding capcoding ON capcoding.vehiclecode = vehicle.capcode  ";
+                sql += "LEFT OUTER JOIN public.saleresult saleresult ON saleresult.vehicle_id = vehicle.id and saleresult.sale_id = vehicle.lastresult_sale_id ";
+                sql += "INNER JOIN public.client seller ON vehicle.seller_id = seller.id ";
+                sql += "LEFT OUTER JOIN public.client buyer ON vehicle.buyer_id = buyer.id ";
+                sql += "where entrydate is not null and exitdate is not null order by entrydate  ";
+
+                LogMsg("Departures SQL " + sql);
+
+                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlDataReader dr = command.ExecuteReader();
+
+                Console.WriteLine("Extracted Departures Data");
+                LogMsg("Extracted Departures Data");
+
+                String fn = csvDataPath + "departures" + ".csv";
+
+                WriteCSV(fn, dr);
+
+                Console.WriteLine("Written Departures Data");
+                LogMsg("Written Departures Data");
+
+            }
+
+            catch (NpgsqlException ne)
+            {
+                Console.WriteLine("SQL Error {0}", ne.Message);
+                LogMsg(ne);
+            }
+
+            catch (IOException ie)
+            {
+                Console.WriteLine("IOException Error {0}", ie.Message);
+                LogMsg(ie);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine("Upload File Failed, status {0}", we.Message);
+                LogMsg(we);
+            }
+
+            finally
+            {
+                conn.Close();
+            }
+
+        }
+
+        /**
+         * Created on 31/10/2017.
+         * Gets Mobile / On;ine Bid stats etc for Phocas
+         * @author andy
+         *
+         */
+        private static void GetMobileStatsCSV()
+        {
+            try
+            {
+                string bidcsvFile = "c:\\temp\\salestats.csv";
+                string lotcsvFile = "c:\\temp\\lotstats.csv";
+
+                using (StreamWriter bidtext = new StreamWriter(bidcsvFile))
+                {
+                    using (StreamWriter lottext = new StreamWriter(lotcsvFile))
+                    {
+                        StringBuilder bidHeaders = new StringBuilder();
+                        bidHeaders.Append("SaleNo").Append(",");
+
+                        bidHeaders.Append("Site").Append(",");
+                        bidHeaders.Append("Start").Append(",");
+                        bidHeaders.Append("Lots").Append(",");
+                        bidHeaders.Append("HallBidders").Append(",");
+                        bidHeaders.Append("OnlineBidders").Append(",");
+                        bidHeaders.Append("OnlineBids").Append(",");
+                        bidHeaders.Append("MobileBidders").Append(",");
+                        bidHeaders.Append("MobileBids").Append(",");
+                        bidHeaders.Append("OnlineClients").Append(",");
+                        bidHeaders.Append("MobileClients").Append("\n");
+                        bidtext.Write(bidHeaders);
+
+                        StringBuilder lotHeaders = new StringBuilder();
+                        lotHeaders.Append("SaleNo").Append(",");
+
+                        lotHeaders.Append("Lot").Append(",");
+                        lotHeaders.Append("Registration").Append(",");
+                        lotHeaders.Append("Make").Append(",");
+                        lotHeaders.Append("Model").Append(",");
+                        lotHeaders.Append("Name").Append(",");
+                        lotHeaders.Append("Company").Append(",");
+                        lotHeaders.Append("Type").Append(",");
+                        lotHeaders.Append("Outcome").Append(",");
+                        lotHeaders.Append("Time").Append("\n");
+                        lottext.Write(lotHeaders);
+
+                        // FTP all the transaction logs we might need
+                        for (int saleNo = 1100; saleNo < 3000; saleNo++)
+                        {
+                            try
+                            {
+                                FTPXML.GetXMLFile(saleNo);
+
+                                ShowTranscriptOfSale.ProcessXml(saleNo);
+
+                                ShowTranscriptOfSale.ProcessTransactionLog();
+
+//                                string bidCSVData = ShowTranscriptOfSale.SaveBidData(ShowTranscriptOfSale.ThisSale.SaleNo);
+                                string lotCSVData = ShowTranscriptOfSale.SaveLotData(ShowTranscriptOfSale.ThisSale.SaleNo);
+
+//                                LogMsg("Bid CSV " + bidCSVData);
+                                LogMsg("Lot CSV " + lotCSVData);
+                                if (saleNo == ShowTranscriptOfSale.ThisSale.SaleNo)
+                                {
+//                                    bidtext.Write(bidCSVData);
+//                                    bidtext.Write("\n");
+                                    lottext.Write(lotCSVData);
+                                    lottext.Write("\n");
+                                }
+                            }
+                            catch (Exception ee)
+                            {
+                                LogMsg("Something went wrong" + ee.Message);
+                            }
+                        }
+                    }
+                }
+
+            }
+            catch (Exception ee)
+            {
+                log.Warn("Couldn't get Mobile data");
+            }
+        }
+
+                /**
+         * Created on 06/07/2017.
+         * Gets available for sale vehicles etc for Phocas
+         * @author andy
+         *
+         */
+        private static void GetAvailablesCSV()
+        {
+            try
+            {
+                conn.Open();
+                string sql = null;
+
+                sql += "SELECT DISTINCT on (date, site_id, vehicle_id, vehicle_entrydate)  ";
+                sql += "d.date,    ";
+                sql += "ca.id as vehicle_id,    ";
+                sql += "ca.site_id as site_id,    ";
+                sql += "ca.registration as registration,    ";
+                sql += "(to_char(ca.entrydate, 'dd/mm/yyyy')) AS vehicle_entrydate,     ";
+                sql += "(to_char(ca.exitdate, 'dd/mm/yyyy')) AS vehicle_exitdate,     ";
+                sql += "(to_char(ca.withdrawnstamp, 'dd/mm/yyyy')) AS withdrawn_stamp,   ";
+                sql += "(to_char(ca.onholdstamp, 'dd/mm/yyyy')) AS onhold_stamp,     ";
+                sql += "(to_char(ca.clearonholdstamp, 'dd/mm/yyyy')) AS onholdcleared_stamp,     ";
+                sql += "(to_char(ca.soldstamp, 'dd/mm/yyyy')) AS sold_stamp,     ";
+                sql += "(ca.status),   ";
+                sql += "(ca.onhold),   ";
+                sql += "(ca.withdrawn),   ";
+                sql += "(case when (ca.status is null and ca.entrydate < d.endofdays and (ca.exitdate > d.endofdays or ca.exitdate is null) and    ";
+                sql += "(ca.withdrawn is false or (ca.withdrawn is true and ca.withdrawnstamp > d.endofdays)) and    ";
+                sql += "(ca.onhold is false or (ca.onhold is true and ca.onholdstamp > d.endofdays))) or   ";
+                sql += "(ca.soldstamp > d.endofdays) then 1 else 0 end) as isonsite,   ";
+                sql += "(case when ca.status = 0 and (ca.soldstamp < d.endofdays or ca.soldstamp is null) then 1 else 0 end) as isentered,   ";
+                sql += "(case when ca.status = 1 and ca.soldstamp < d.endofdays then 1 else 0 end) as issold,   ";
+                sql += "(case when ca.status = 2 and ca.soldstamp < d.endofdays then 1 else 0 end) as isunsold,   ";
+                sql += "(case when ca.status = 3 and ca.soldstamp < d.endofdays then 1 else 0 end) as isprovisional,  "; 
+                sql += "(case when ca.withdrawn is true and (ca.withdrawnstamp < d.endofdays and ca.withdrawnstamp is null) then 1 else 0 end) as iswithdrawn,   ";
+                sql += "(case when ca.onhold is true and ca.onholdstamp < d.endofdays and (ca.clearonholdstamp > d.endofdays or (ca.clearonholdstamp is null)) then 1 else 0 end) as isonhold,   ";
+                sql += "(ca.text),   ";
+                sql += "(case when ((ca.status is null and ca.entrydate < d.endofdays and (ca.exitdate > d.endofdays or ca.exitdate is null) and    ";
+                sql += "(ca.withdrawn is false or (ca.withdrawn is true and ca.withdrawnstamp > d.endofdays)) and    ";
+                sql += "(ca.onhold is false or (ca.onhold is true and ca.onholdstamp > d.endofdays)))) or   ";
+                sql += "(ca.soldstamp > d.endofdays) or   ";
+                sql += "(ca.status = 0 and (ca.soldstamp < d.endofdays or ca.soldstamp is null)) or   ";
+                sql += "(ca.status = 2 and ca.soldstamp < d.endofdays) then 1 else 0 end) as availableforsale,    ";
+                sql += "(case when (ca.status = 1 and ca.soldstamp < d.endofdays) or   ";
+                sql += "(ca.status = 3 and ca.soldstamp < d.endofdays) or   ";
+                sql += "(ca.withdrawn is true and (ca.withdrawnstamp < d.endofdays or ca.withdrawnstamp is null)) or   ";
+                sql += "(ca.onhold is true and ca.onholdstamp < d.endofdays and (ca.clearonholdstamp > d.endofdays or ca.clearonholdstamp is null)) then 1 else 0 end) as awaitingdeparture    ";
+                sql += "FROM (     ";
+                sql += "select     ";
+                sql += "to_char(date_trunc('day', ((current_date) - offs)), 'dd/mm/yyyy') AS date,    ";
+                sql += "(current_date) - offs + 1 as endofdays  ";
+                sql += "FROM generate_series(365, 0, -1)      ";
+                sql += "AS offs     ";
+                sql += ") d    ";
+                sql += "LEFT OUTER JOIN (     ";
+                sql += "SELECT     ";
+                sql += "vehicle.id,    "; 
+                sql += "site_id,    ";
+                sql += "registration,   "; 
+                sql += "entrydate,    ";
+                sql += "exitdate,    ";
+                sql += "saleresult.status as status,    ";
+                sql += "saleresult.soldstamp as soldstamp,  "; 
+                sql += "h.text as text,   ";
+                sql += "case when h.text like '%Withdrawn%' then h.stamp else null end as withdrawnstamp,   ";
+                sql += "case when h.text like '%Set on hold%' then h.stamp else null end as onholdstamp,   ";
+                sql += "case when h.text like '%Clear on hold%' then h.stamp else null end as clearonholdstamp,   ";
+                sql += "onhold,    ";
+                sql += "withdrawn   ";
+                sql += "FROM     ";
+                sql += "vehicle vehicle LEFT OUTER JOIN saleresult saleresult ON saleresult.vehicle_id = vehicle.id and saleresult.sale_id = vehicle.lastresult_sale_id    ";
+                sql += "LEFT OUTER JOIN history h ON vehicle.id = h.vehicle_id and (h.text like '%Withdrawn%' or h.text like '%Set on hold%' or h.text like '%Clear on hold%')   ";
+                sql += ") ca    ";
+                sql += "ON (entrydate is not null and entrydate < d.endofdays and (exitdate is null or exitdate > d.endofdays))    ";
+                sql += "order by date, site_id, vehicle_id, vehicle_entrydate   ";
+
+
+
+                LogMsg("Availables SQL " + sql);
+
+                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
+                NpgsqlDataReader dr = command.ExecuteReader();
+
+                Console.WriteLine("Extracted Availables Data");
+                LogMsg("Extracted Availables Data");
+
+                String fn = csvDataPath + "availables" + ".csv";
+
+                WriteCSV(fn, dr);
+
+                Console.WriteLine("Written Availables Data");
+                LogMsg("Written Availables Data");
+
+            }
+
+            catch (NpgsqlException ne)
+            {
+                Console.WriteLine("SQL Error {0}", ne.Message);
+                LogMsg(ne);
+            }
+
+            catch (IOException ie)
+            {
+                Console.WriteLine("IOException Error {0}", ie.Message);
+                LogMsg(ie);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine("Upload File Failed, status {0}", we.Message);
+                LogMsg(we);
+            }
+
+            finally
+            {
+                conn.Close();
+            }
+
+        }
 
         /**
          * Created on 12/05/2017.
@@ -2231,12 +2710,29 @@ namespace PhocasData
                 string sql = null;
 
                 // Find all vehicles on site
-                sql += "select id, registration, site_id, lastresult_sale_id, ";
-                sql += "make, model, ";
-                sql += "to_char(vehicle.\"entrydate\", 'dd/mm/yyyy') AS vehicle_entrydate, ";
-                sql += "case when vehicle.exitdate is not null then ((EXTRACT(epoch from age(vehicle.exitdate, vehicle.entrydate)) / 86400)::int) else 0 end AS daysonsite ";
-                sql += "from vehicle ";
-                sql += "where exitdate is null and entrydate is not null order by entrydate ";
+
+                sql += "select vehicle.id as id, registration, site_id, lastresult_sale_id,  ";
+                sql += "case when capcoding.manufacturer is not null then capcoding.manufacturer else make end as make, ";
+                sql += "case when capcoding.shortmodel is not null then capcoding.shortmodel else model end as model, ";
+                sql += "to_char(vehicle.entrydate, 'dd/mm/yyyy') AS vehicle_entrydate,  ";
+                sql += "((EXTRACT(epoch from age(NOW(), vehicle.entrydate)) / 86400)::int) AS daysonsite, ";
+                sql += "case when saleresult.status is null then 1 else 0 end as awaitingcount,  ";
+                sql += "case when saleresult.status = 0 then 1 else 0 end as enteredcount,  ";
+                sql += "case when saleresult.status = 1 then 1 else 0 end as soldcount,  ";
+                sql += "case when saleresult.status = 2 then 1 else 0 end as unsoldcount,  ";
+                sql += "case when saleresult.status = 3 then 1 else 0 end as provisionalcount,  ";
+                sql += "case when onhold is true then 1 else 0 end as onhold, ";
+                sql += "case when withdrawn is true then 1 else 0 end as withdrawn, ";
+                sql += "pricing_closingprice,  ";
+                sql += "seller.accountnumber as selleraccountnumber,  ";
+                sql += "buyer.accountnumber as buyeraccountnumber,  ";
+                sql += "to_char(vehicle.exitdate, 'dd/mm/yyyy') AS vehicle_exitdate  ";
+                sql += "FROM ";
+                sql += "public.vehicle vehicle LEFT OUTER JOIN public.capcoding capcoding ON capcoding.vehiclecode = vehicle.capcode  ";
+                sql += "LEFT OUTER JOIN public.saleresult saleresult ON saleresult.vehicle_id = vehicle.id and saleresult.sale_id = vehicle.lastresult_sale_id ";
+                sql += "INNER JOIN public.client seller ON vehicle.seller_id = seller.id ";
+                sql += "LEFT OUTER JOIN public.client buyer ON vehicle.buyer_id = buyer.id ";
+                sql += "where exitdate is null and entrydate is not null order by entrydate  ";
 
                 LogMsg("Stock SQL " + sql);
 
@@ -2426,18 +2922,18 @@ namespace PhocasData
 
         static public void LogMsg(string info)
         {
-            String[] logmsg = { info };
+            String[] LogMsg = { info };
 
-            log.Info(logmsg);
+            log.Info(LogMsg);
 
             return;
         }
 
         static public void LogMsg(Exception e)
         {
-            String[] logmsg = { e.Message };
+            String[] LogMsg = { e.Message };
 
-            log.Fatal(logmsg, e);
+            log.Fatal(LogMsg, e);
 
             return;
         }
