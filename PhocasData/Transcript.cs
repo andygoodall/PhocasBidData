@@ -11,8 +11,9 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Threading;
+using System.Globalization;
 
-namespace PhocasData
+namespace PhocasBidData
 {
     public partial class ShowTranscriptOfSale
     {
@@ -56,6 +57,8 @@ namespace PhocasData
             public string auctioneerMessage { get; set; }
             public string auctioneerMessageToAll { get; set; }
             public string clientMessage { get; set; }
+            public int onlineBids { get; set; }
+            public int hallBids { get; set; }
         }
 
         public class transcript : IEnumerable
@@ -295,7 +298,8 @@ namespace PhocasData
                 }
                 else
                 {
-                    if ((thisbidder.bidderName != null) && (thisbidder.bidderName.IndexOf("Mitesh") > -1))
+//                    if ((thisbidder.bidderName != null) && (thisbidder.bidderName.IndexOf("Mitesh") > -1))
+                    if ((thisbidder.bidderName != null))
                     {
                         int i = 0;
                     }
@@ -417,6 +421,8 @@ namespace PhocasData
             string SearchString = "";
             string highestOnlineBid = "";
             string highestHallBid = "";
+            int onlineBids = 0;
+            int hallBids = 0;
             int clientCount = 0;
 
             onlineClients = new Bidders();
@@ -424,7 +430,7 @@ namespace PhocasData
             var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                                             @"Humboldt\AuctionController\transactionlogs"));
 
-            directory = new DirectoryInfo("e:\\transactionlogs\\");
+            directory = new DirectoryInfo("E:\\TransactionLogs\\");
 
             if (directory.Exists == false)
             {
@@ -564,12 +570,14 @@ namespace PhocasData
                         case XmlNodeType.Text: //Display the text in each element.
                             if (field2.IndexOf("date") > -1)
                             {
-                                tr.date = Convert.ToDateTime(reader.Value).ToString("dd/MM/yyyy HH:mm:ss.fff");
+//                                tr.date = Convert.ToDateTime(reader.Value).ToString("dd/MM/yyyy HH:mm:ss.fff");
+                                tr.date = Convert.ToDateTime(reader.Value).ToString("MM/dd/yyyy HH:mm:ss.fff");
                                 field2 = "";
                             }
                             if (field3.IndexOf("date") > -1)
                             {
-                                tr.date = Convert.ToDateTime(reader.Value).ToString("dd/MM/yyyy HH:mm:ss.fff");
+//                                tr.date = Convert.ToDateTime(reader.Value).ToString("dd/MM/yyyy HH:mm:ss.fff");
+                                tr.date = Convert.ToDateTime(reader.Value).ToString("MM/dd/yyyy HH:mm:ss.fff");
                                 field3 = "";
                             }
 
@@ -697,16 +705,19 @@ namespace PhocasData
                                 }
                                 if (field3.IndexOf("type") > -1)
                                 {
-                                    if ((reader.Value.IndexOf("Hall") > -1) || (reader.Value.IndexOf("Web") > -1) || (reader.Value.IndexOf("Mobile") > -1))
+                                    if ((reader.Value.IndexOf("Hall") > -1) || (reader.Value.IndexOf("Web") > -1) || 
+                                        (reader.Value.IndexOf("Mobile") > -1) || (reader.Value.IndexOf("Online") > -1) )
                                     {
                                         tr.bidderType = reader.Value;
-                                        if ((tr.bidderType == "Web") || (tr.bidderType == "Mobile"))
+                                        if ((tr.bidderType == "Web") || (tr.bidderType == "Mobile") || (tr.bidderType == "Online"))
                                         {
                                             highestOnlineBid = tr.bidValue;
+                                            onlineBids++;
                                         }
                                         if (tr.bidderType == "Hall")
                                         {
                                             highestHallBid = tr.bidValue;
+                                            hallBids++;
                                         }
                                     }
                                     if ((reader.Value.IndexOf("Sold") > -1) || (reader.Value.IndexOf("Provisional") > -1))
@@ -714,10 +725,12 @@ namespace PhocasData
                                         // Check this with fix...
                                         if (tr.bidderId != null)
                                         {
-                                            //                                            tr.bidderType = "Web";
                                             tr.highestOnlineBid = highestOnlineBid;
                                             highestOnlineBid = "";
                                             highestHallBid = "";
+                                            tr.onlineBids = onlineBids;
+                                            onlineBids = 0;
+                                            hallBids = 0;
                                         }
                                         else
                                         {
@@ -725,6 +738,9 @@ namespace PhocasData
                                             tr.highestHallBid = highestHallBid;
                                             highestHallBid = "";
                                             highestOnlineBid = "";
+                                            tr.hallBids = hallBids;
+                                            hallBids = 0;
+                                            onlineBids = 0;
                                         }
                                     }
                                     field3 = "";
@@ -964,6 +980,10 @@ namespace PhocasData
                                             if (tr.outcomeType.IndexOf("Unsold") > -1)
                                             {
                                                 Transcript += "Not Sold: Lot " + tr.lot + " - £" + tr.bidValue;
+                                                tr.onlineBids = onlineBids;
+                                                tr.hallBids = hallBids;
+                                                hallBids = 0;
+                                                onlineBids = 0;
                                             }
                                             if (tr.outcomeType.IndexOf("Sold") > -1)
                                             {
@@ -972,6 +992,10 @@ namespace PhocasData
                                                     Transcript += "Lot " + tr.lot + " Sold to Hall Bidder for £" + tr.bidValue;
                                                     tr.highestHallBid = tr.bidValue;
                                                     tr.highestOnlineBid = highestOnlineBid;
+                                                    tr.hallBids = hallBids;
+                                                    hallBids = 0;
+                                                    tr.onlineBids = onlineBids;
+                                                    onlineBids = 0;
                                                 }
                                                 else
                                                 {
@@ -985,6 +1009,10 @@ namespace PhocasData
                                                     }
                                                     tr.highestHallBid = highestHallBid;
                                                     tr.highestOnlineBid = tr.bidValue;
+                                                    tr.onlineBids = onlineBids;
+                                                    tr.hallBids = hallBids;
+                                                    hallBids = 0;
+                                                    onlineBids = 0;
                                                 }
                                             }
                                             if (tr.outcomeType.IndexOf("Retracted") > -1)
@@ -999,6 +1027,10 @@ namespace PhocasData
                                                     Transcript += "Lot " + tr.lot + " Provisionally Sold to Hall Bidder for £" + tr.bidValue;
                                                     tr.highestHallBid = tr.bidValue;
                                                     tr.highestOnlineBid = highestOnlineBid;
+                                                    tr.onlineBids = onlineBids;
+                                                    tr.hallBids = hallBids;
+                                                    hallBids = 0;
+                                                    onlineBids = 0;
                                                 }
                                                 else
                                                 {
@@ -1012,6 +1044,10 @@ namespace PhocasData
                                                     }
                                                     tr.highestHallBid = highestHallBid;
                                                     tr.highestOnlineBid = tr.bidValue;
+                                                    tr.onlineBids = onlineBids;
+                                                    tr.hallBids = hallBids;
+                                                    hallBids = 0;
+                                                    onlineBids = 0;
                                                 }
                                             }
                                         }
@@ -1262,217 +1298,6 @@ namespace PhocasData
 //            this.Close();
         }
 
-/*        private void SaveTransactionLog_Click(object sender, EventArgs e)
-        {
-            SaveFileDialog savefile;
-
-            var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                            @"Humboldt\AuctionController\transactionlogs"));
-
-            var myFile = directory.GetFiles()
-             .OrderByDescending(f => f.LastWriteTime)
-             .First();
-
-            SaveTransactionLog.Enabled = false;
-            CloseTranscript.Enabled = false;
-
-            savefile = new SaveFileDialog();
-
-            // set a default file name
-            savefile.FileName = SalePrefix + "_" + "transaction.xls";
-            // set filters - this can be done in properties as well
-            // savefile.Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*";
-
-#if saved
-            if (savefile.ShowDialog() == DialogResult.OK)
-            {
-                using (StreamWriter sw = new StreamWriter(savefile.FileName))
-                    sw.Write(Transcript);
-
-                MessageBox.Show("File Saved");
-            }
-#endif
-            Microsoft.Office.Interop.Excel.Application xlApp;
-
-            try
-            {
-                xlApp = new Microsoft.Office.Interop.Excel.Application();
-
-                if (xlApp == null)
-                {
-                    MessageBox.Show("Excel is not properly installed!!");
-                    LogMsg("Excel is not properly installed!!");
-                    return;
-                }
-            }
-
-            catch (Exception)
-            {
-                MessageBox.Show("Excel is not available");
-                LogMsg("Excel is not available");
-                return;
-            }
-
-            Workbook xlWorkBook;
-            Worksheet xlWorkSheet;
-            object misValue = System.Reflection.Missing.Value;
-
-            try
-            {
-                xlWorkBook = xlApp.Workbooks.Add(misValue);
-                xlWorkSheet = (Worksheet)xlWorkBook.Worksheets.get_Item(1);
-                xlWorkSheet.Name = "Transcript Report";
-
-                Range er = xlWorkSheet.get_Range("A:A", System.Type.Missing);
-                er.EntireColumn.ColumnWidth = 140;
-
-                xlWorkSheet.get_Range("A1", "A1").Cells.Font.Size = 20;
-                xlWorkSheet.get_Range("A2", "A2").Cells.Font.Size = 16;
-                xlWorkSheet.get_Range("A3", "A4").Cells.Font.Size = 12;
-
-                xlWorkSheet.PageSetup.Application.ActiveWindow.DisplayGridlines = false;
-
-                xlWorkSheet.get_Range("A1", "A2").Cells.Font.Color = Color.ForestGreen;
-                xlWorkSheet.get_Range("A4", "A4").Interior.Color = Color.ForestGreen;
-                xlWorkSheet.get_Range("A4", "A4").Cells.Font.Color = Color.White;
-
-                xlWorkSheet.Cells[1, 1] = "Live Bid";
-                xlWorkSheet.Cells[2, 1] = "Transcript Report";
-                if (saleid > -1)
-                {
-                    xlWorkSheet.Cells[3, 1] = "Sale Number " + saleid;
-                }
-                xlWorkSheet.Cells[4, 1] = "Transcript Text";
-                int ii = 5;
-                using (StringReader sr = new StringReader(Transcript))
-                {
-                    string line;
-                    while ((line = sr.ReadLine()) != null)
-                    {
-                        xlWorkSheet.Cells[ii, 1] = line;
-                        ii++;
-                    }
-                }
-                xlWorkSheet.get_Range("A5", "A" + ii).Cells.Font.Size = 10;
-                xlWorkSheet.get_Range("A5", "A" + ii).Cells.Borders.LineStyle = XlLineStyle.xlContinuous;
-                xlWorkSheet.get_Range("A5", "A" + ii).Cells.Borders.Color = Color.Gray;
-
-                xlApp.DisplayAlerts = false;
-
-                xlWorkBook.SaveAs(directory + "\\" + savefile.FileName, XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                xlWorkBook.Close(true, misValue, misValue);
-                xlApp.Quit();
-            }
-            catch (Exception ee)
-            {
-                MessageBox.Show(ee.Message);
-                LogMsg(ee);
-            }
-
-            // Process transaction log for totals etc.
-            ProcessTransactionLog();
-
-            if (backgroundWorker1.IsBusy != true)
-            {
-                // create a new instance of the alert form
-                rc = new ReportCreation();
-
-                // event handler for the Cancel button in AlertForm
-                rc.Canceled += new EventHandler<EventArgs>(buttonCancel_Click);
-
-                rc.Show();
-
-                // Start the asynchronous operation.
-                backgroundWorker1.RunWorkerAsync();
-            }
-
-            backgroundWorker1.ReportProgress(5);
-
-            //SaveTransactionLog.Enabled = true;
-            CloseTranscript.Enabled = true;
-
-        }
-
-        // This event handler cancels the backgroundworker, fired from Cancel button in AlertForm.
-        private void buttonCancel_Click(object sender, EventArgs e)
-        {
-            if (backgroundWorker1.WorkerSupportsCancellation == true)
-            {
-                // Cancel the asynchronous operation.
-                backgroundWorker1.CancelAsync();
-
-                // Close the form
-                rc.Close();
-            }
-        }
-
-        // This event handler updates the progress.
-        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
-        {
-            // Show the progress in main form (GUI)
-            labelResult.Text = "Creating Reports " + (e.ProgressPercentage.ToString() + "% Complete");
-            // Pass the progress to AlertForm label and progressbar
-            rc.Message = "In progress, please wait... " + e.ProgressPercentage.ToString() + "%";
-            rc.ProgressValue = e.ProgressPercentage;
-        }
-
-        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
-        {
-            BackgroundWorker worker = sender as BackgroundWorker;
-
-            if (worker.CancellationPending == true)
-            {
-                e.Cancel = true;
-                return;
-            }
-            else
-            {
-                worker.ReportProgress(10);
-
-                // Save Online Sales Report
-                SaveOnlineSalesReport(saleid);
-                worker.ReportProgress(20);
-
-                // Save Clients Online Report
-                SaveClientsOnlineReport(saleid);
-                worker.ReportProgress(40);
-
-                // Save Global Online Report
-                SaveGlobalOnlineReport();
-                worker.ReportProgress(60);
-
-                // Save Vendor Online Report
-                SaveVendorOnlineReport();
-                worker.ReportProgress(80);
-
-                // Save Sale Report
-                SaveSaleReport(saleid);
-                worker.ReportProgress(100);
-
-            }
-
-        }
-
-        // This event handler deals with the results of the background operation.
-        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
-            if (e.Cancelled == true)
-            {
-                labelResult.Text = "Canceled!";
-            }
-            else if (e.Error != null)
-            {
-                labelResult.Text = "Error: " + e.Error.Message;
-            }
-            else
-            {
-                labelResult.Text = "Done!";
-            }
-
-            rc.Close();
-        }
-
-        */
         // Work out lots per buyer, total clients etc.
         static public void ProcessTransactionLog()
         {
@@ -1617,7 +1442,9 @@ namespace PhocasData
                             {
                                 //tr.date = "13/13/2015";
                                 //SaleStart = Convert.ToDateTime(tr.date);
-                                DateTime.TryParse(tr.date, out SaleStart);
+                                CultureInfo culture = CultureInfo.CreateSpecificCulture("en-US");
+                                DateTimeStyles styles = DateTimeStyles.None;
+                                DateTime.TryParse(tr.date, culture, styles, out SaleStart);
                             }
                             catch (FormatException fe)
                             {
@@ -1915,148 +1742,7 @@ namespace PhocasData
             return;
         }
 
-/*        public static void SaveOnlineSalesReport(int saleid)
-        {
-            var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                            @"Humboldt\AuctionController\transactionlogs"));
-            string filename = SalePrefix + "_" + "onlinesales.xls";
-            double onlineSalesTotal = 0.0;
 
-            Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
-
-            if (xlApp == null)
-            {
-                MessageBox.Show("Excel is not properly installed!!");
-                LogMsg("Excel is not properly installed!!");
-                return;
-            }
-
-            Workbook xlWorkBook;
-            Worksheet xlWorkSheet;
-            object misValue = System.Reflection.Missing.Value;
-
-            try
-            {
-                xlWorkBook = xlApp.Workbooks.Add(misValue);
-                xlWorkSheet = (Worksheet)xlWorkBook.Worksheets.get_Item(1);
-                xlWorkSheet.Name = "Online Sales Report";
-
-                xlWorkSheet.get_Range("A1", "A1").Cells.Font.Size = 20;
-                xlWorkSheet.get_Range("A2", "A2").Cells.Font.Size = 16;
-                xlWorkSheet.get_Range("A3", "A4").Cells.Font.Size = 12;
-
-                xlWorkSheet.get_Range("A1", "A1").EntireColumn.ColumnWidth = 40;
-                xlWorkSheet.get_Range("B1", "B1").EntireColumn.ColumnWidth = 30;
-                xlWorkSheet.get_Range("C1", "C1").EntireColumn.ColumnWidth = 50;
-                xlWorkSheet.get_Range("D1", "D1").EntireColumn.ColumnWidth = 30;
-                xlWorkSheet.get_Range("E1", "E1").EntireColumn.ColumnWidth = 20;
-
-                xlWorkSheet.PageSetup.Application.ActiveWindow.DisplayGridlines = false;
-
-                xlWorkSheet.get_Range("A1", "A2").Cells.Font.Color = Color.ForestGreen;
-                xlWorkSheet.get_Range("A4", "E4").Interior.Color = Color.ForestGreen;
-                xlWorkSheet.get_Range("A4", "E4").Cells.Font.Color = Color.White;
-                xlWorkSheet.get_Range("E1", "E1").EntireColumn.HorizontalAlignment = XlHAlign.xlHAlignRight;
-
-
-                xlWorkSheet.Cells[1, 1] = "Live Bid";
-                xlWorkSheet.Cells[2, 1] = "Online Sales Report";
-                if (saleid > -1)
-                {
-                    xlWorkSheet.Cells[3, 1] = "Sale Number " + saleid;
-                }
-                xlWorkSheet.Cells[4, 1] = "Buyer Name";
-                xlWorkSheet.Cells[4, 2] = "Registration";
-                xlWorkSheet.Cells[4, 3] = "Description";
-                xlWorkSheet.Cells[4, 4] = "Lot";
-                xlWorkSheet.Cells[4, 5] = "Bid Amount";
-
-                int ii = 5;
-
-                foreach (buyer thisbuyer in Buyers)
-                {
-                    if ((thisbuyer.buyerType == null) || (thisbuyer.buyerType.IndexOf("Web") > -1))
-                    {
-                        foreach (lot thislot in thisbuyer.Lots)
-                        {
-                            xlWorkSheet.Cells[ii, 1] = thisbuyer.buyerName + " (" + thisbuyer.buyerCompany + ")";
-                            xlWorkSheet.Cells[ii, 2] = thislot.registration;
-                            xlWorkSheet.Cells[ii, 3] = thislot.description;
-                            xlWorkSheet.Cells[ii, 4] = thislot.lotNumber;
-                            xlWorkSheet.Cells[ii, 5] = "£" + thislot.closingBid;
-                            ii++;
-                        }
-                        xlWorkSheet.Cells[ii, 4] = "Buyer: " + thisbuyer.buyerName + "\n(" + thisbuyer.buyerCompany + ")\n" + "Total";
-                        xlWorkSheet.get_Range("D" + ii, "D" + ii).Cells.Font.Bold = true;
-                        xlWorkSheet.get_Range("D" + ii, "D" + ii).Cells.WrapText = true;
-                        xlWorkSheet.get_Range("D" + ii, "D" + ii).Cells.HorizontalAlignment = XlHAlign.xlHAlignRight;
-                        xlWorkSheet.get_Range("D" + ii, "E" + ii).Cells.Interior.Color = Color.LightGray;
-                        xlWorkSheet.Cells[ii, 5] = "£" + thisbuyer.TotalClosingPrice;
-                        onlineSalesTotal += thisbuyer.TotalClosingPrice;
-                        ii++;
-                    }
-                    if ((thisbuyer.buyerType != null) && (thisbuyer.buyerType.IndexOf("Mobile") > -1))
-                    {
-                        foreach (lot thislot in thisbuyer.Lots)
-                        {
-                            xlWorkSheet.Cells[ii, 1] = thisbuyer.buyerName + " (" + thisbuyer.buyerCompany + ")";
-                            xlWorkSheet.Cells[ii, 2] = thislot.registration;
-                            xlWorkSheet.Cells[ii, 3] = thislot.description;
-                            xlWorkSheet.Cells[ii, 4] = thislot.lotNumber;
-                            xlWorkSheet.Cells[ii, 5] = "£" + thislot.closingBid;
-                            ii++;
-                        }
-                        xlWorkSheet.Cells[ii, 4] = "Mobile Buyer: " + thisbuyer.buyerName + "\n(" + thisbuyer.buyerCompany + ")\n" + "Total";
-                        xlWorkSheet.get_Range("D" + ii, "D" + ii).Cells.Font.Bold = true;
-                        xlWorkSheet.get_Range("D" + ii, "D" + ii).Cells.WrapText = true;
-                        xlWorkSheet.get_Range("D" + ii, "D" + ii).Cells.HorizontalAlignment = XlHAlign.xlHAlignRight;
-                        xlWorkSheet.get_Range("D" + ii, "E" + ii).Cells.Interior.Color = Color.LightGray;
-                        xlWorkSheet.Cells[ii, 5] = "£" + thisbuyer.TotalClosingPrice;
-                        onlineSalesTotal += thisbuyer.TotalClosingPrice;
-                        ii++;
-                    }
-                }
-
-                xlWorkSheet.get_Range("A5", "E" + (ii - 1)).Cells.Font.Size = 10;
-                xlWorkSheet.get_Range("A5", "E" + (ii - 1)).Cells.Borders.LineStyle = XlLineStyle.xlContinuous;
-                xlWorkSheet.get_Range("A5", "E" + (ii - 1)).Cells.Borders.Color = Color.Gray;
-                xlWorkSheet.get_Range("D" + ii, "D" + ii).Cells.HorizontalAlignment = XlHAlign.xlHAlignRight;
-
-                // Make sure totals appear after table
-                if (ii == 5)
-                {
-                    ii++;
-                }
-
-                xlWorkSheet.Cells[ii, 4] = "Online Sales Total";
-                xlWorkSheet.Cells[ii, 5] = "£" + onlineSalesTotal;
-
-                xlApp.DisplayAlerts = false;
-
-                xlWorkBook.SaveAs(directory + "\\" + filename, XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                xlWorkBook.Close(true, misValue, misValue);
-                xlApp.Quit();
-
-                xlWorkSheet = null;
-                xlWorkBook = null;
-                GC.Collect();
-            }
-            catch (Exception ee)
-            {
-                MessageBox.Show(ee.Message);
-                LogMsg(ee);
-            }
-            finally
-            {
-                xlApp.Quit();
-                xlWorkSheet = null;
-                xlWorkBook = null;
-                GC.Collect();
-            }
-
-            return;
-        }
-*/
         public static string SaveBidData(int saleid)
         {
             var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -2073,16 +1759,18 @@ namespace PhocasData
 
                 if (saleid > -1)
                 {
+//                    string formattedDate = DateTime.ParseExact(ThisSale.StartTime, "dd/MM/yyyy HH:mm:ss.FFF",
+//                        CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
+//                        CultureInfo.InvariantCulture);
+                    string formattedDate = ThisSale.StartTime.ToLocalTime().ToString("yyyy/MM/dd");
+//                    string formattedDate = tr.date.ToString("yyyy/MM/dd");
+
                     csv += saleid + ",";
                     csv += ThisSale.SiteId + ",";
-                    csv += ThisSale.StartTime + ",";
+                    csv += formattedDate + ",";
                     csv += ThisSale.Lots + ",";
                     csv += ThisSale.HallBids + ",";
                 }
-//                xlWorkSheet.Cells[4, 1] = "Buyer Name / Code";
-//                xlWorkSheet.Cells[4, 2] = "Company";
-//                xlWorkSheet.Cells[4, 3] = "Online Bids Placed";
-//                xlWorkSheet.Cells[4, 4] = "Mobile Bids Placed";
 
                 int ii = 5;
 
@@ -2094,22 +1782,16 @@ namespace PhocasData
                         var obj = onlineClients.dd.FirstOrDefault(x => x.bidderId == thisbidder.bidderId);
                         if (obj != null)
                         {
-//                            xlWorkSheet.Cells[ii, 1] = obj.bidderName + " / " + obj.bidderId;
-//                            xlWorkSheet.Cells[ii, 2] = obj.bidderCompany;
                         }
                         else
                         {
-//                            xlWorkSheet.Cells[ii, 1] = thisbidder.bidderName + " / " + thisbidder.bidderId;
-//                            xlWorkSheet.Cells[ii, 2] = thisbidder.bidderCompany;
                         }
                         if ((thisbidder.bidderType != null) && (thisbidder.bidderType.IndexOf("Mobile") > -1))
                         {
-//                            xlWorkSheet.Cells[ii, 4] = thisbidder.numBids;
                             mobileBidders ++;
                         }
                         else
                         {
-//                            xlWorkSheet.Cells[ii, 3] = thisbidder.numBids;
                         }
                         totalBids += thisbidder.numBids;
                         totalClients++;
@@ -2123,14 +1805,8 @@ namespace PhocasData
                     ii++;
                 }
 
-//                xlWorkSheet.Cells[ii, 4] = "Total Bidders";
-//                xlWorkSheet.Cells[ii, 5] = totalClients;
                 csv += totalClients + ",";
-//                xlWorkSheet.Cells[ii + 1, 4] = "Total Online Bids inc Mobile";
-//                xlWorkSheet.Cells[ii + 1, 5] = ThisSale.onlineBids;
                 csv += ThisSale.onlineBids + ",";
-//                xlWorkSheet.Cells[ii + 2, 4] = "Total Mobile Bids";
-//                xlWorkSheet.Cells[ii + 2, 5] = ThisSale.mobileBids;
                 csv += mobileBidders + ",";
                 csv += ThisSale.mobileBids + ",";
 
@@ -2138,13 +1814,6 @@ namespace PhocasData
                 ii++;
                 ii++;
                 ii++;
-
-//                xlWorkSheet.get_Range("A" + ii, "E" + ii).Interior.Color = Color.ForestGreen;
-//                xlWorkSheet.get_Range("A" + ii, "E" + ii).Cells.Font.Color = Color.White;
-
-//                xlWorkSheet.Cells[ii, 1] = "Buyer Name / Code";
-//                xlWorkSheet.Cells[ii, 2] = "Company";
-//                xlWorkSheet.Cells[ii, 3] = "Bidder Type";
                 ii++;
 
                 int mb = 0;
@@ -2152,9 +1821,6 @@ namespace PhocasData
                 {
                     if (thisclient.bidderId != null)
                     {
-//                        xlWorkSheet.Cells[ii, 1] = thisclient.bidderName + " / " + thisclient.bidderId;
-//                        xlWorkSheet.Cells[ii, 2] = thisclient.bidderCompany;
-//                        xlWorkSheet.Cells[ii, 3] = thisclient.bidderType;
                         if (thisclient.bidderType == "Mobile")
                         {
                             mb++;
@@ -2163,43 +1829,26 @@ namespace PhocasData
                     }
                 }
 
-//                xlWorkSheet.get_Range("A5", "E" + (ii - 1)).Cells.Font.Size = 10;
-//                xlWorkSheet.get_Range("A5", "E" + (ii - 1)).Cells.Borders.LineStyle = XlLineStyle.xlContinuous;
-//                xlWorkSheet.get_Range("A5", "E" + (ii - 1)).Cells.Borders.Color = Color.Gray;
-
                 ii++;
 
-//                xlWorkSheet.Cells[ii, 4] = "Total Clients";
-//                xlWorkSheet.Cells[ii, 5] = ThisSale.ClientsOnline;
                 csv += ThisSale.ClientsOnline + ",";
                 csv += mb;
 
-                //                xlApp.DisplayAlerts = false;
-
-//                xlWorkBook.SaveAs(directory + "\\" + filename, XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-//                xlWorkBook.Close(true, misValue, misValue);
-//                xlApp.Quit();
-//                xlWorkSheet = null;
-//                xlWorkBook = null;
                 GC.Collect();
             }
             catch (Exception ee)
             {
-//                MessageBox.Show(ee.Message);
                 LogMsg(ee);
             }
             finally
             {
-//                xlApp.Quit();
-//                xlWorkSheet = null;
-//                xlWorkBook = null;
                 GC.Collect();
             }
 
             return csv;
         }
 
-        public static string SaveLotData(int saleid)
+        public static string SaveBidderData(int saleid)
         {
             var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                                             @"Humboldt\AuctionController\transactionlogs"));
@@ -2212,43 +1861,212 @@ namespace PhocasData
 
             try
             {
+
+                if (saleid > -1)
+                {
+                }
+
+                int ii = 5;
+
+                int mobileBidders = 0;
+                foreach (Bidder thisbidder in onlineBidders)
+                {
+                    if ((thisbidder.bidderId != null) && (thisbidder.numBids > 0))
+                    {
+//                        string formattedDate = ThisSale.StartTime.ToShortDateString().ToString("YYYY/mm/DD");
+//                        string formattedDate = DateTime.ParseExact(ThisSale.StartTime, "dd/MM/yyyy HH:mm:ss.FFF",
+//                                                CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
+//                                                CultureInfo.InvariantCulture);
+                        string formattedDate = ThisSale.StartTime.ToLocalTime().ToString("yyyy/MM/dd");
+                        
+                        csv += saleid + ",";
+                        csv += ThisSale.SiteId + ",";
+                        csv += formattedDate + ",";
+                        bool found = false;
+                        foreach (Bidder thisclient in onlineClients)
+                        {
+                            if (thisclient.bidderId.Equals(thisbidder.bidderId))
+                            {
+                                csv += "\"" + thisclient.bidderName + "\"" + "," + thisclient.bidderId + ",";
+                                csv += "\"" + thisclient.bidderCompany + "\"" + "," + thisclient.bidderType + ",";
+                                found = true;
+                            }
+                            if (found == true) break;
+                        }
+                        if (found == false)
+                        {
+                            csv += ",,,,";
+                        }
+                        csv += thisbidder.numBids + "\n";
+
+                        if ((thisbidder.bidderType != null) && (thisbidder.bidderType.IndexOf("Mobile") > -1))
+                        {
+                            mobileBidders++;
+                        }
+                        else
+                        {
+                        }
+                        totalBids += thisbidder.numBids;
+                        totalClients++;
+                        ii++;
+                    }
+                }
+
+                // Make sure totals appear after table
+                if (ii == 5)
+                {
+                    ii++;
+                }
+
+                ii++;
+                ii++;
+                ii++;
+                ii++;
+                ii++;
+
+                int mb = 0;
+                foreach (Bidder thisclient in onlineClients)
+                {
+                    if (thisclient.bidderId != null)
+                    {
+                        if (thisclient.bidderType == "Mobile")
+                        {
+                            mb++;
+                        }
+                        ii++;
+                    }
+                }
+
+                ii++;
+
+                GC.Collect();
+            }
+            catch (Exception ee)
+            {
+                LogMsg(ee);
+            }
+            finally
+            {
+                GC.Collect();
+            }
+
+            return csv;
+        }
+
+        public static string SaveUserData(int saleid)
+        {
+            var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                            @"Humboldt\AuctionController\transactionlogs"));
+            string csv = "";
+
+            object misValue = System.Reflection.Missing.Value;
+
+            try
+            {
+
+                if (saleid > -1)
+                {
+                }
+
+                int ii = 5;
+
+                foreach (Bidder thisUser in onlineClients)
+                {
+                    if (thisUser.bidderId != null)
+                    {
+                        string formattedDate = ThisSale.StartTime.ToLocalTime().ToString("yyyy/MM/dd");
+
+                        csv += saleid + ",";
+                        csv += ThisSale.SiteId + ",";
+                        csv += formattedDate + ",";
+                        csv += "\"" + thisUser.bidderName + "\"" + "," + thisUser.bidderId + ",";
+                        csv += "\"" + thisUser.bidderCompany + "\"" + "," + thisUser.bidderType + "\n";
+                    }
+                }
+
+                // Make sure totals appear after table
+                if (ii == 5)
+                {
+                    ii++;
+                }
+
+                ii++;
+                ii++;
+                ii++;
+                ii++;
+                ii++;
+
+                int mb = 0;
+                foreach (Bidder thisclient in onlineClients)
+                {
+                    if (thisclient.bidderId != null)
+                    {
+                        if (thisclient.bidderType == "Mobile")
+                        {
+                            mb++;
+                        }
+                        ii++;
+                    }
+                }
+
+                ii++;
+
+                GC.Collect();
+            }
+            catch (Exception ee)
+            {
+                LogMsg(ee);
+            }
+            finally
+            {
+                GC.Collect();
+            }
+
+            return csv;
+        }
+
+        public static string SaveLotData(int saleid)
+        {
+            var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                            @"Humboldt\AuctionController\transactionlogs"));
+            string filename = SalePrefix + "_" + "clientsonline.xls";
+            string csv = "";
+
+            object misValue = System.Reflection.Missing.Value;
+
+            try
+            {
                 int ii = 5;
 
                 foreach (transcriptline tr in tl)
                 {
                     if (tr.outcomeType != null)
                     {
+                        csv += ThisSale.SiteName + ",";
+                        csv += saleid + "-" + tr.lot + ",";
                         csv += saleid + ",";
-                        //                        xlWorkSheet.Cells[ii, 1] = tr.lot;
                         csv += tr.lot + ",";
-//                        xlWorkSheet.Cells[ii, 2] = tr.registration;
                         csv += tr.registration + ",";
-//                        xlWorkSheet.Cells[ii, 3] = tr.make + " " + tr.model + " " + tr.description;
-                        csv += tr.make + "," + tr.model + "," + tr.description + " ,";
+                        csv += tr.make + "," + tr.model + ",";
 
                         if ((tr.outcomeType.IndexOf("Sold") == 0) || (tr.outcomeType.IndexOf("Provisional") == 0))
                         {
                             if ((tr.bidderType == null) || (tr.bidderType.IndexOf("Hall") == 0))
                             {
-//                                xlWorkSheet.Cells[ii, 4] = "Hall Bidder";
                                 csv += ",,Hall,";
                             }
                             else
                             {
                                 if ((tr.bidderType != null) && (tr.bidderType.IndexOf("Mobile") > -1))
                                 {
-//                                    xlWorkSheet.Cells[ii, 4] = tr.name + " (" + tr.company + ") (Mobile)";
-                                    csv += tr.name + "," + tr.company + ",Mobile" + ",";
+                                    csv += tr.name + "," + tr.company + ",Mobile,";
                                 }
                                 else
                                 {
-                                    csv += tr.name + "," + tr.company + "," + ",";
-//                                    xlWorkSheet.Cells[ii, 4] = tr.name + " (" + tr.company + ")";
+                                    csv += tr.name + "," + tr.company + ",Web,";
                                 }
                             }
                             csv += tr.bidValue + "," ;
-//                            xlWorkSheet.Cells[ii, 5] = "£" + tr.bidValue;
-                            //xlWorkSheet.Cells[ii, 6] = tr.outcomeType;
                             csv += tr.outcomeType + ",";
                             if (tr.outcomeType.IndexOf("Sold") == 0)
                             {
@@ -2258,704 +2076,49 @@ namespace PhocasData
                             {
 //                                ProvisionalTotal += Convert.ToDouble(tr.bidValue);
                             }
-//                            xlWorkSheet.Cells[ii, 7] = tr.date;
-                            csv += tr.date + "\n";
+//                            string formattedDate = DateTime.ParseExact(tr.date, "dd/MM/yyyy HH:mm:ss.FFF", 
+//                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd", 
+//                                                    CultureInfo.InvariantCulture);  
+                                                        string formattedDate = DateTime.ParseExact(tr.date, "MM/dd/yyyy HH:mm:ss.FFF", 
+                                                                                CultureInfo.InvariantCulture).ToString("yyyy/MM/dd", 
+                                                                                CultureInfo.InvariantCulture);  
+//                            string formattedDate = tr.date.ToString("yyyy/MM/dd");
+                                                        csv += formattedDate;
 
                         }
                         else
                         {
-//                            xlWorkSheet.Cells[ii, 4] = "";
-//                            xlWorkSheet.Cells[ii, 5] = "";
-//                            xlWorkSheet.Cells[ii, 6] = tr.outcomeType;
-//                            xlWorkSheet.Cells[ii, 7] = tr.date;
-                            csv += ",,,," + tr.outcomeType + "," + tr.date + "\n";
+//                            string formattedDate = DateTime.ParseExact(tr.date, "dd/MM/yyyy HH:mm:ss.FFF",
+//                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
+//                                                    CultureInfo.InvariantCulture);
+                                                        string formattedDate = DateTime.ParseExact(tr.date, "MM/dd/yyyy HH:mm:ss.FFF",
+                                                                                CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
+                                                                                CultureInfo.InvariantCulture);
+                                                        csv += ",,,," + tr.outcomeType + "," + formattedDate;
                         }
+                        csv += "," + tr.vendorName + "," + tr.vendorId + ",";
+                        csv += tr.hallBids + "," + tr.onlineBids + "\n";
                         ii++;
                     }
                 }
-//                xlWorkSheet.Cells[ii, 1] = "Provisional";
-//                xlWorkSheet.Cells[ii, 2] = "£" + ProvisionalTotal;
-//                xlWorkSheet.Cells[ii + 1, 1] = "Sold";
-//                xlWorkSheet.Cells[ii + 1, 2] = "£" + SoldTotal;
 
-//                xlWorkSheet.get_Range("A5", "G" + (ii + 1)).Cells.Font.Size = 10;
-//                xlWorkSheet.get_Range("A5", "G" + (ii - 1)).Cells.Borders.LineStyle = XlLineStyle.xlContinuous;
-//                xlWorkSheet.get_Range("A5", "G" + (ii - 1)).Cells.Borders.Color = Color.Gray;
-//                xlWorkSheet.get_Range("A1", "G" + (ii + 1)).Cells.HorizontalAlignment = XlHAlign.xlHAlignLeft;
-//                xlWorkSheet.get_Range("E1", "E" + (ii + 1)).Cells.HorizontalAlignment = XlHAlign.xlHAlignRight;
-
-//                xlApp.DisplayAlerts = false;
-
-//                xlWorkBook.SaveAs(directory + "\\" + filename, XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-//                xlWorkBook.Close(true, misValue, misValue);
-//                xlApp.Quit();
-//                xlWorkSheet = null;
-//                xlWorkBook = null;
                 GC.Collect();
+            }
+            catch (FormatException fe)
+            {
+                LogMsg(fe);
             }
             catch (Exception ee)
             {
-//                MessageBox.Show(ee.Message);
                 LogMsg(ee);
             }
             finally
             {
-//                xlApp.Quit();
-//                xlWorkSheet = null;
-//                xlWorkBook = null;
                 GC.Collect();
             }
             return csv;
         }
 
-        /*
-           public static void SaveGlobalOnlineReport()
-                {
-                    var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                                    @"Humboldt\AuctionController\transactionlogs"));
-                    string filename = SalePrefix + "_" + "globalsale.xls";
 
-                    Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
-
-                    if (xlApp == null)
-                    {
-                        MessageBox.Show("Excel is not properly installed!!");
-                        LogMsg("Excel is not properly installed!!");
-                        return;
-                    }
-
-                    Workbook xlWorkBook;
-                    Worksheet xlWorkSheet;
-                    object misValue = System.Reflection.Missing.Value;
-
-                    try
-                    {
-                        xlWorkBook = xlApp.Workbooks.Add(misValue);
-                        xlWorkSheet = (Worksheet)xlWorkBook.Worksheets.get_Item(1);
-                        xlWorkSheet.Name = "Global Sale Report";
-
-                        xlWorkSheet.get_Range("A1", "A1").Cells.Font.Size = 20;
-                        xlWorkSheet.get_Range("A2", "A2").Cells.Font.Size = 16;
-                        xlWorkSheet.get_Range("A3", "A3").Cells.Font.Size = 12;
-
-                        xlWorkSheet.get_Range("A1", "D18").Cells.Borders.Weight = 3d;
-                        xlWorkSheet.get_Range("A1", "D18").Cells.WrapText = true;
-
-                        xlWorkSheet.get_Range("A1", "A1").EntireColumn.ColumnWidth = 40;
-                        xlWorkSheet.get_Range("B1", "B1").EntireColumn.ColumnWidth = 20;
-                        xlWorkSheet.get_Range("C1", "C1").EntireColumn.ColumnWidth = 40;
-                        xlWorkSheet.get_Range("D1", "D1").EntireColumn.ColumnWidth = 20;
-
-                        xlWorkSheet.PageSetup.Application.ActiveWindow.DisplayGridlines = false;
-
-                        xlWorkSheet.get_Range("A1", "A2").Cells.Font.Color = Color.ForestGreen;
-                        xlWorkSheet.get_Range("A4", "A19").Interior.Color = Color.LightGray;
-                        xlWorkSheet.get_Range("B4", "B19").Interior.Color = Color.DarkGray;
-                        xlWorkSheet.get_Range("C4", "C19").Interior.Color = Color.LightGray;
-                        xlWorkSheet.get_Range("D4", "D19").Interior.Color = Color.DarkGray;
-
-                        xlWorkSheet.get_Range("C5", "D5").Interior.Color = Color.White;
-                        xlWorkSheet.get_Range("C10", "D10").Interior.Color = Color.White;
-                        xlWorkSheet.get_Range("C13", "D13").Interior.Color = Color.White;
-                        xlWorkSheet.get_Range("C5", "D5").Cells.Font.Bold = true;
-                        xlWorkSheet.get_Range("C10", "D10").Cells.Font.Bold = true;
-                        xlWorkSheet.get_Range("C13", "D13").Cells.Font.Bold = true;
-
-                        xlWorkSheet.Cells[1, 1] = "Live Bid";
-                        xlWorkSheet.Cells[2, 1] = "Global Online Post Sale Report";
-                        xlWorkSheet.Cells[3, 1] = "Sale Number " + ThisSale.SaleNo;
-                        xlWorkSheet.Cells[4, 1] = "Branch";
-                        xlWorkSheet.Cells[4, 2] = ThisSale.SiteName;
-                        xlWorkSheet.Cells[4, 3] = "No of Vehicles Entered";
-                        xlWorkSheet.Cells[4, 4] = ThisSale.Lots;
-
-                        xlWorkSheet.Cells[5, 1] = "Sale Date";
-                        xlWorkSheet.Cells[5, 2] = ThisSale.StartTime.ToLocalTime();
-                        xlWorkSheet.Cells[5, 3] = "Sold";
-                        xlWorkSheet.Cells[5, 4] = "";
-
-                        xlWorkSheet.Cells[6, 1] = "Sale Description";
-                        xlWorkSheet.Cells[6, 2] = ThisSale.Description;
-                        xlWorkSheet.Cells[6, 3] = "No of Vehicles Sold Online (excluding Provisional)";
-                        xlWorkSheet.Cells[6, 4] = ThisSale.onlineSales + ThisSale.mobileSales - ThisSale.ProvisionallySoldLotsonline;
-
-                        xlWorkSheet.Cells[7, 1] = "Number of Dealers Logged On During Sale";
-                        xlWorkSheet.Cells[7, 2] = ThisSale.ClientsOnline;
-                        xlWorkSheet.Cells[7, 3] = "No of Vehicles Sold Physically";
-                        xlWorkSheet.Cells[7, 4] = ThisSale.HallSales;
-
-                        xlWorkSheet.Cells[8, 1] = "Number of Dealers who purchased (including Provisional)";
-                        xlWorkSheet.Cells[8, 2] = ThisSale.Buyers;
-                        xlWorkSheet.Cells[8, 3] = "% Sold Online";
-                        if (ThisSale.Lots > 0)
-                        {
-                            xlWorkSheet.Cells[8, 4] = ((((ThisSale.onlineSales + ThisSale.mobileSales) * 100 / ThisSale.Lots)).ToString() + "%");
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[8, 4] = "0%";
-                        }
-
-                        xlWorkSheet.Cells[9, 1] = "Min Added Value";
-                        // Total bid online after last hall bid
-                        xlWorkSheet.Cells[9, 2] = "£" + ThisSale.MinAddedValue;
-                        xlWorkSheet.Cells[9, 3] = "% Sold Physically";
-                        if (ThisSale.Lots > 0)
-                        {
-                            xlWorkSheet.Cells[9, 4] = ((ThisSale.HallSales * 100 / ThisSale.Lots)) + "%";
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[9, 4] = "0%";
-                        }
-
-                        xlWorkSheet.Cells[10, 1] = "Total Number of Online Bids / Mobile Bids";
-                        xlWorkSheet.Cells[10, 2] = ThisSale.onlineBids + " / " + ThisSale.mobileBids;
-                        xlWorkSheet.Cells[10, 3] = "Provisionally Sold";
-                        xlWorkSheet.Cells[10, 4] = "";
-
-                        xlWorkSheet.Cells[11, 1] = "Total Bid Value LOL";
-                        xlWorkSheet.Cells[11, 2] = ThisSale.TotalClosingPrices;
-                        xlWorkSheet.Cells[11, 3] = "No of Vehicles Provisionally Sold Online";
-                        xlWorkSheet.Cells[11, 4] = ThisSale.ProvisionallySoldLotsonline;
-
-                        xlWorkSheet.Cells[12, 1] = "Min Added Value Per Unit Entered";
-                        if (ThisSale.Lots > 0)
-                        {
-                            xlWorkSheet.Cells[12, 2] = "£" + (ThisSale.MinAddedValue / ThisSale.Lots).ToString("0.00");
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[12, 2] = "£0.00";
-                        }
-                        xlWorkSheet.Cells[12, 3] = "No of Vehicles Provisionally Sold Physically";
-                        xlWorkSheet.Cells[12, 4] = ThisSale.ProvisionallySoldLotsHall;
-
-                        xlWorkSheet.Cells[13, 1] = "Min Added Value Per Unit with LOL Interest";
-                        xlWorkSheet.Cells[13, 2] = "";
-                        xlWorkSheet.Cells[13, 3] = "Not Sold";
-                        xlWorkSheet.Cells[13, 4] = "";
-
-                        xlWorkSheet.Cells[14, 1] = "LOL Bid Value per Unit Entered";
-                        xlWorkSheet.Cells[14, 2] = "";
-                        xlWorkSheet.Cells[14, 3] = "No of Vehicles Not Sold";
-                        xlWorkSheet.Cells[14, 4] = (ThisSale.Lots - ThisSale.HallSales - ThisSale.onlineSales - ThisSale.mobileSales);
-
-                        xlWorkSheet.Cells[15, 1] = "Total Vehicles Sold";
-                        xlWorkSheet.Cells[15, 2] = (ThisSale.HallSales + ThisSale.onlineSales + ThisSale.mobileSales);
-                        xlWorkSheet.Cells[15, 3] = "% Not Sold";
-                        if (ThisSale.Lots > 0)
-                        {
-                            xlWorkSheet.Cells[15, 4] = ((ThisSale.Lots - ThisSale.HallSales - ThisSale.onlineSales - ThisSale.mobileSales) * 100 / ThisSale.Lots) + "%";
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[15, 4] = "0%";
-                        }
-
-                        xlWorkSheet.Cells[16, 1] = "% of Units with Online Bid";
-                        if (ThisSale.Lots > 0)
-                        {
-                            xlWorkSheet.Cells[16, 2] = ((ThisSale.LotsWithOnlineBids * 100 / ThisSale.Lots)) + "%";
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[16, 2] = "£0.00";
-                        }
-                        xlWorkSheet.Cells[16, 3] = "";
-                        xlWorkSheet.Cells[16, 4] = "";
-
-                        xlWorkSheet.Cells[17, 1] = "% of Bids Placed Online";
-                        if ((ThisSale.onlineBids + ThisSale.mobileBids + ThisSale.HallBids) > 0)
-                        {
-                            xlWorkSheet.Cells[17, 2] = ((ThisSale.onlineBids + ThisSale.mobileBids) * 100 / (ThisSale.onlineBids + ThisSale.mobileBids + ThisSale.HallBids)) + "%";
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[17, 2] = "0%";
-                        }
-                        xlWorkSheet.Cells[17, 3] = "";
-                        xlWorkSheet.Cells[17, 4] = "";
-
-                        xlWorkSheet.Cells[18, 1] = "% of Online Sale Conversion";
-                        if (((ThisSale.onlineSales + ThisSale.mobileSales) > 0) && (ThisSale.LotsWithOnlineBids > 0))
-                        {
-                            xlWorkSheet.Cells[18, 2] = ((ThisSale.onlineSales + ThisSale.mobileSales) * 100 / (ThisSale.LotsWithOnlineBids)) + "%";
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[18, 2] = "0%";
-                        }
-                        xlWorkSheet.Cells[18, 3] = "";
-                        xlWorkSheet.Cells[18, 4] = "";
-
-                        xlWorkSheet.Cells[19, 1] = "% of Bids Placed by Mobile";
-                        if ((ThisSale.onlineBids + ThisSale.mobileBids + ThisSale.HallBids) > 0)
-                        {
-                            xlWorkSheet.Cells[19, 2] = (ThisSale.mobileBids * 100 / (ThisSale.onlineBids + ThisSale.mobileBids + ThisSale.HallBids)) + "%";
-                        }
-                        else
-                        {
-                            xlWorkSheet.Cells[19, 2] = "0%";
-                        }
-                        xlWorkSheet.Cells[19, 3] = "";
-                        xlWorkSheet.Cells[19, 4] = "";
-
-                        xlWorkSheet.get_Range("A4", "D" + 19).Cells.Font.Size = 10;
-                        xlWorkSheet.get_Range("A4", "D" + 19).Cells.Borders.LineStyle = XlLineStyle.xlContinuous;
-                        xlWorkSheet.get_Range("A1", "D" + 19).Cells.Borders.Color = Color.White;
-                        xlWorkSheet.get_Range("A1", "D" + 19).Cells.HorizontalAlignment = XlHAlign.xlHAlignLeft;
-
-                        xlApp.DisplayAlerts = false;
-
-                        xlWorkBook.SaveAs(directory + "\\" + filename, XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                        xlWorkBook.Close(true, misValue, misValue);
-                        xlApp.Quit();
-                        xlWorkSheet = null;
-                        xlWorkBook = null;
-                        GC.Collect();
-                    }
-                    catch (Exception ee)
-                    {
-                        MessageBox.Show(ee.Message);
-                        LogMsg(ee);
-                    }
-                    finally
-                    {
-                        xlApp.Quit();
-                        xlWorkSheet = null;
-                        xlWorkBook = null;
-                        GC.Collect();
-                    }
-
-                    return;
-                }
-
-                public static void SaveSaleReport(int saleid)
-                {
-                    var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                                    @"Humboldt\AuctionController\transactionlogs"));
-                    string filename = SalePrefix + "_" + "salereport.xls";
-                    double SoldTotal = 0.0;
-                    double ProvisionalTotal = 0.0;
-
-                    Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
-
-                    if (xlApp == null)
-                    {
-                        MessageBox.Show("Excel is not properly installed!!");
-                        LogMsg("Excel is not properly installed!!");
-                        return;
-                    }
-
-                    Workbook xlWorkBook;
-                    Worksheet xlWorkSheet;
-                    object misValue = System.Reflection.Missing.Value;
-
-                    try
-                    {
-                        xlWorkBook = xlApp.Workbooks.Add(misValue);
-                        xlWorkSheet = (Worksheet)xlWorkBook.Worksheets.get_Item(1);
-                        xlWorkSheet.Name = "Full Sale Report";
-
-                        xlWorkSheet.get_Range("A1", "A1").Cells.Font.Size = 20;
-                        xlWorkSheet.get_Range("A2", "A2").Cells.Font.Size = 16;
-                        xlWorkSheet.get_Range("A3", "A4").Cells.Font.Size = 12;
-
-                        xlWorkSheet.get_Range("A1", "A1").EntireColumn.ColumnWidth = 15;
-                        xlWorkSheet.get_Range("B1", "B1").EntireColumn.ColumnWidth = 20;
-                        xlWorkSheet.get_Range("C1", "C1").EntireColumn.ColumnWidth = 50;
-                        xlWorkSheet.get_Range("D1", "D1").EntireColumn.ColumnWidth = 50;
-                        xlWorkSheet.get_Range("E1", "E1").EntireColumn.ColumnWidth = 20;
-                        xlWorkSheet.get_Range("F1", "F1").EntireColumn.ColumnWidth = 20;
-                        xlWorkSheet.get_Range("G1", "G1").EntireColumn.ColumnWidth = 30;
-
-                        xlWorkSheet.get_Range("C1", "D1").EntireColumn.WrapText = true;
-
-                        xlWorkSheet.PageSetup.Application.ActiveWindow.DisplayGridlines = false;
-
-                        xlWorkSheet.get_Range("A1", "A2").Cells.Font.Color = Color.ForestGreen;
-                        xlWorkSheet.get_Range("A4", "G4").Interior.Color = Color.ForestGreen;
-                        xlWorkSheet.get_Range("A4", "G4").Cells.Font.Color = Color.White;
-
-                        xlWorkSheet.Cells[1, 1] = "Live Bid";
-                        xlWorkSheet.Cells[2, 1] = "Full Sale Report";
-                        if (saleid > -1)
-                        {
-                            xlWorkSheet.Cells[3, 1] = "Sale Number " + saleid;
-                        }
-                        xlWorkSheet.Cells[4, 1] = "Lot";
-                        xlWorkSheet.Cells[4, 2] = "Registration";
-                        xlWorkSheet.Cells[4, 3] = "Description";
-                        xlWorkSheet.Cells[4, 4] = "Name";
-                        xlWorkSheet.Cells[4, 5] = "Amount";
-                        xlWorkSheet.Cells[4, 6] = "Status";
-                        xlWorkSheet.Cells[4, 7] = "Date/Time";
-
-                        int ii = 5;
-
-                        foreach (transcriptline tr in tl)
-                        {
-                            if (tr.outcomeType != null)
-                            {
-                                xlWorkSheet.Cells[ii, 1] = tr.lot;
-                                xlWorkSheet.Cells[ii, 2] = tr.registration;
-                                xlWorkSheet.Cells[ii, 3] = tr.make + " " + tr.model + " " + tr.description;
-                                if ((tr.outcomeType.IndexOf("Sold") == 0) || (tr.outcomeType.IndexOf("Provisional") == 0))
-                                {
-                                    if ((tr.bidderType == null) || (tr.bidderType.IndexOf("Hall") == 0))
-                                    {
-                                        xlWorkSheet.Cells[ii, 4] = "Hall Bidder";
-                                    }
-                                    else
-                                    {
-                                        if ((tr.bidderType != null) && (tr.bidderType.IndexOf("Mobile") > -1))
-                                        {
-                                            xlWorkSheet.Cells[ii, 4] = tr.name + " (" + tr.company + ") (Mobile)";
-                                        }
-                                        else
-                                        {
-                                            xlWorkSheet.Cells[ii, 4] = tr.name + " (" + tr.company + ")";
-                                        }
-                                    }
-                                    xlWorkSheet.Cells[ii, 5] = "£" + tr.bidValue;
-                                    xlWorkSheet.Cells[ii, 6] = tr.outcomeType;
-                                    if (tr.outcomeType.IndexOf("Sold") == 0)
-                                    {
-                                        SoldTotal += Convert.ToDouble(tr.bidValue);
-                                    }
-                                    if (tr.outcomeType.IndexOf("Provisional") == 0)
-                                    {
-                                        ProvisionalTotal += Convert.ToDouble(tr.bidValue);
-                                    }
-                                    xlWorkSheet.Cells[ii, 7] = tr.date;
-                                }
-                                else
-                                {
-                                    xlWorkSheet.Cells[ii, 4] = "";
-                                    xlWorkSheet.Cells[ii, 5] = "";
-                                    xlWorkSheet.Cells[ii, 6] = tr.outcomeType;
-                                    xlWorkSheet.Cells[ii, 7] = tr.date;
-                                }
-                                ii++;
-                            }
-                        }
-                        xlWorkSheet.Cells[ii, 1] = "Provisional";
-                        xlWorkSheet.Cells[ii, 2] = "£" + ProvisionalTotal;
-                        xlWorkSheet.Cells[ii + 1, 1] = "Sold";
-                        xlWorkSheet.Cells[ii + 1, 2] = "£" + SoldTotal;
-
-                        xlWorkSheet.get_Range("A5", "G" + (ii + 1)).Cells.Font.Size = 10;
-                        xlWorkSheet.get_Range("A5", "G" + (ii - 1)).Cells.Borders.LineStyle = XlLineStyle.xlContinuous;
-                        xlWorkSheet.get_Range("A5", "G" + (ii - 1)).Cells.Borders.Color = Color.Gray;
-                        xlWorkSheet.get_Range("A1", "G" + (ii + 1)).Cells.HorizontalAlignment = XlHAlign.xlHAlignLeft;
-                        xlWorkSheet.get_Range("E1", "E" + (ii + 1)).Cells.HorizontalAlignment = XlHAlign.xlHAlignRight;
-
-                        xlApp.DisplayAlerts = false;
-
-                        xlWorkBook.SaveAs(directory + "\\" + filename, XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                        xlWorkBook.Close(true, misValue, misValue);
-                        xlApp.Quit();
-                        xlWorkSheet = null;
-                        xlWorkBook = null;
-                        GC.Collect();
-                    }
-                    catch (Exception ee)
-                    {
-                        MessageBox.Show(ee.Message);
-                        LogMsg(ee);
-                    }
-                    finally
-                    {
-                        xlApp.Quit();
-                        xlWorkSheet = null;
-                        xlWorkBook = null;
-                        GC.Collect();
-                    }
-
-                    return;
-                }
-
-                public static void SaveVendorOnlineReport()
-                {
-                    var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                                    @"Humboldt\AuctionController\transactionlogs"));
-                    string filename = SalePrefix + "_" + "sellerreport.xls";
-                    int ss = 0;
-
-                    Microsoft.Office.Interop.Excel.Application xlApp = new Microsoft.Office.Interop.Excel.Application();
-
-                    if (xlApp == null)
-                    {
-                        MessageBox.Show("Excel is not properly installed!!");
-                        LogMsg("Excel is not properly installed!!");
-                        return;
-                    }
-
-                    Workbook xlWorkBook;
-                    Worksheet[] xlWorkSheet = new Worksheet[numVendors];
-                    Worksheet[] newxlWorkSheet = new Worksheet[numVendors];
-                    object misValue = System.Reflection.Missing.Value;
-
-                    try
-                    {
-                        xlWorkBook = xlApp.Workbooks.Add(misValue);
-
-                        for (ss = 1; ss < numVendors; ss++)
-                        {
-                            newxlWorkSheet[ss] = xlApp.Worksheets.Add();
-                        }
-
-                        // One sheet per Vendor
-                        ss = 0;
-                        foreach (vendor thisvendor in Vendors)
-                        {
-                            xlWorkSheet[ss] = (Worksheet)xlWorkBook.Worksheets[ss + 1];
-                            // Replace any dodgy characters in name
-                            string pattern = "[\\~#%&*{}/:<>?|\"-]";
-                            string replacement = " ";
-
-                            Regex regEx = new Regex(pattern);
-                            string accountnumber = thisvendor.vendorCode;
-                            string sanitized = " ";
-                            if (thisvendor.vendorName != null)
-                            {
-                                sanitized = accountnumber + " - " + Regex.Replace(regEx.Replace(thisvendor.vendorName, replacement), @"\s+", " ");
-                            }
-                            else
-                            {
-                                //sanitized = accountnumber;
-                            }
-
-                            if (sanitized.Length > 31)
-                            {
-                                xlWorkSheet[ss].Name = sanitized.Substring(0, 31);
-                            }
-                            else
-                            {
-                                try
-                                {
-                                    xlWorkSheet[ss].Name = sanitized;
-                                }
-                                catch (System.Runtime.InteropServices.COMException ce)
-                                {
-                                    LogMsg("Potentially matching Vendor names so obfusticating " + ce.Message);
-                                    // Add ss to name and try again
-                                    xlWorkSheet[ss].Name = sanitized + ss;
-                                }
-                            }
-
-                            xlWorkSheet[ss].get_Range("A1", "A1").Cells.Font.Size = 20;
-                            xlWorkSheet[ss].get_Range("A2", "A2").Cells.Font.Size = 16;
-                            xlWorkSheet[ss].get_Range("A3", "A3").Cells.Font.Size = 12;
-
-                            xlWorkSheet[ss].get_Range("A6", "D20").Cells.Borders.Weight = 3d;
-                            xlWorkSheet[ss].get_Range("A1", "D20").Cells.WrapText = true;
-
-                            xlWorkSheet[ss].get_Range("A1", "A1").EntireColumn.ColumnWidth = 40;
-                            xlWorkSheet[ss].get_Range("B1", "B1").EntireColumn.ColumnWidth = 20;
-                            xlWorkSheet[ss].get_Range("C1", "C1").EntireColumn.ColumnWidth = 40;
-                            xlWorkSheet[ss].get_Range("D1", "D1").EntireColumn.ColumnWidth = 20;
-
-                            xlWorkSheet[ss].PageSetup.Application.ActiveWindow.DisplayGridlines = false;
-
-                            xlWorkSheet[ss].get_Range("A1", "A2").Cells.Font.Color = Color.ForestGreen;
-                            xlWorkSheet[ss].get_Range("A4", "D5").Interior.Color = Color.ForestGreen;
-                            xlWorkSheet[ss].get_Range("A6", "A20").Interior.Color = Color.LightGray;
-                            xlWorkSheet[ss].get_Range("B6", "B20").Interior.Color = Color.DarkGray;
-                            xlWorkSheet[ss].get_Range("C6", "C20").Interior.Color = Color.LightGray;
-                            xlWorkSheet[ss].get_Range("D6", "D20").Interior.Color = Color.DarkGray;
-
-                            xlWorkSheet[ss].get_Range("C7", "D7").Interior.Color = Color.White;
-                            xlWorkSheet[ss].get_Range("C12", "D12").Interior.Color = Color.White;
-                            xlWorkSheet[ss].get_Range("C15", "D15").Interior.Color = Color.White;
-                            xlWorkSheet[ss].get_Range("C7", "D7").Cells.Font.Bold = true;
-                            xlWorkSheet[ss].get_Range("C12", "D12").Cells.Font.Bold = true;
-                            xlWorkSheet[ss].get_Range("C15", "D15").Cells.Font.Bold = true;
-
-                            xlWorkSheet[ss].Cells[1, 1] = "Live Bid";
-                            xlWorkSheet[ss].Cells[2, 1] = "Global Online Post Sale Report";
-                            xlWorkSheet[ss].Cells[3, 1] = "Sale Number " + ThisSale.SaleNo;
-
-                            xlWorkSheet[ss].Cells[4, 1] = "Vendor " + thisvendor.vendorName;
-                            xlWorkSheet[ss].Cells[5, 1] = "Vendor Code " + thisvendor.vendorCode;
-
-                            xlWorkSheet[ss].Cells[6, 1] = "Branch";
-                            xlWorkSheet[ss].Cells[6, 2] = ThisSale.SiteName;
-                            xlWorkSheet[ss].Cells[6, 3] = "No of Vehicles Entered";
-                            xlWorkSheet[ss].Cells[6, 4] = thisvendor.numLots;
-
-                            xlWorkSheet[ss].Cells[7, 1] = "Sale Date";
-                            xlWorkSheet[ss].Cells[7, 2] = ThisSale.StartTime.ToLocalTime();
-                            xlWorkSheet[ss].Cells[7, 3] = "Sold";
-                            xlWorkSheet[ss].Cells[7, 4] = "";
-
-                            xlWorkSheet[ss].Cells[8, 1] = "Sale Description";
-                            xlWorkSheet[ss].Cells[8, 2] = ThisSale.Description;
-                            xlWorkSheet[ss].Cells[8, 3] = "No of Vehicles Sold Online (excluding Provisional)";
-                            xlWorkSheet[ss].Cells[8, 4] = thisvendor.numOnlineSales - thisvendor.numProvisionalOnlineSales;
-
-                            xlWorkSheet[ss].Cells[9, 1] = "Number of Dealers Logged On During Sale";
-                            xlWorkSheet[ss].Cells[9, 2] = ThisSale.ClientsOnline;
-                            xlWorkSheet[ss].Cells[9, 3] = "No of Vehicles Sold Physically";
-                            xlWorkSheet[ss].Cells[9, 4] = thisvendor.numHallSales;
-
-                            xlWorkSheet[ss].Cells[10, 1] = "Number of Dealers who purchased (including Provisional)";
-                            //                    xlWorkSheet[ss].Cells[10, 2] = thisvendor.numBuyers;
-                            xlWorkSheet[ss].Cells[10, 2] = ThisSale.Buyers;
-                            xlWorkSheet[ss].Cells[10, 3] = "% Sold Online";
-                            if (thisvendor.numLots > 0)
-                            {
-                                xlWorkSheet[ss].Cells[10, 4] = thisvendor.numOnlineSales * 100 / thisvendor.numLots + "%";
-                            }
-                            else
-                            {
-                                xlWorkSheet[ss].Cells[10, 4] = "0%";
-                            }
-
-                            xlWorkSheet[ss].Cells[11, 1] = "Min Added Value";
-                            xlWorkSheet[ss].Cells[11, 2] = "£" + thisvendor.minAddedValue;
-                            xlWorkSheet[ss].Cells[11, 3] = "% Sold Physically";
-                            if (thisvendor.numLots > 0)
-                            {
-                                xlWorkSheet[ss].Cells[11, 4] = thisvendor.numHallSales * 100 / thisvendor.numLots + "%";
-                            }
-                            else
-                            {
-                                xlWorkSheet[ss].Cells[11, 4] = "0%";
-                            }
-
-                            xlWorkSheet[ss].Cells[12, 1] = "Total Number of Online Bids";
-                            //                    xlWorkSheet[ss].Cells[12, 2] = thisvendor.numOnlineBidders;
-                            xlWorkSheet[ss].Cells[12, 2] = ThisSale.Bidders;
-                            xlWorkSheet[ss].Cells[12, 3] = "Provisionally Sold";
-                            xlWorkSheet[ss].Cells[12, 4] = "";
-
-                            xlWorkSheet[ss].Cells[13, 1] = "Total Bid Value LOL";
-                            xlWorkSheet[ss].Cells[13, 2] = thisvendor.TotalClosingPrice;
-                            xlWorkSheet[ss].Cells[13, 3] = "No of Vehicles Provisionally Sold Online";
-                            xlWorkSheet[ss].Cells[13, 4] = thisvendor.numProvisionalOnlineSales;
-
-                            xlWorkSheet[ss].Cells[14, 1] = "Min Added Value Per Unit Entered";
-                            xlWorkSheet[ss].Cells[14, 2] = "£" + (thisvendor.minAddedValue / thisvendor.numLots).ToString("0.00");
-                            xlWorkSheet[ss].Cells[14, 3] = "No of Vehicles Provisionally Sold Physically";
-                            xlWorkSheet[ss].Cells[14, 4] = thisvendor.numProvisionalHallSales;
-
-                            xlWorkSheet[ss].Cells[15, 1] = "Min Added Value Per Unit with LOL Interest";
-                            xlWorkSheet[ss].Cells[15, 2] = "";
-                            xlWorkSheet[ss].Cells[15, 3] = "Not Sold";
-                            xlWorkSheet[ss].Cells[15, 4] = "";
-
-                            xlWorkSheet[ss].Cells[16, 1] = "LOL Bid Value per Unit Entered";
-                            xlWorkSheet[ss].Cells[16, 2] = "";
-                            xlWorkSheet[ss].Cells[16, 3] = "No of Vehicles Not Sold";
-                            xlWorkSheet[ss].Cells[16, 4] = thisvendor.numLots - thisvendor.numHallSales - thisvendor.numOnlineSales;
-
-                            xlWorkSheet[ss].Cells[17, 1] = "Total Vehicles Sold";
-                            xlWorkSheet[ss].Cells[17, 2] = thisvendor.numHallSales + thisvendor.numOnlineSales;
-                            xlWorkSheet[ss].Cells[17, 3] = "% Not Sold";
-                            if (thisvendor.numLots > 0)
-                            {
-                                xlWorkSheet[ss].Cells[17, 4] = (thisvendor.numLots - thisvendor.numHallSales - thisvendor.numOnlineSales) * 100 / thisvendor.numLots + "%";
-                            }
-                            else
-                            {
-                                xlWorkSheet[ss].Cells[17, 4] = "0%";
-                            }
-
-                            xlWorkSheet[ss].Cells[18, 1] = "% of Units with Online Bid";
-                            if (thisvendor.numLots > 0)
-                            {
-                                xlWorkSheet[ss].Cells[18, 2] = thisvendor.onlineBids * 100 / thisvendor.numLots + "%";
-                            }
-                            else
-                            {
-                                xlWorkSheet[ss].Cells[18, 2] = "0%";
-                            }
-                            xlWorkSheet[ss].Cells[18, 3] = "";
-                            xlWorkSheet[ss].Cells[18, 4] = "";
-
-                            xlWorkSheet[ss].Cells[19, 1] = "% of Bids Placed Online";
-                            if ((thisvendor.onlineBids + thisvendor.hallBids) > 0)
-                            {
-                                xlWorkSheet[ss].Cells[19, 2] = thisvendor.onlineBids * 100 / (thisvendor.onlineBids + thisvendor.hallBids) + "%";
-                            }
-                            else
-                            {
-                                xlWorkSheet[ss].Cells[19, 2] = "0%";
-                            }
-                            xlWorkSheet[ss].Cells[19, 3] = "";
-                            xlWorkSheet[ss].Cells[19, 4] = "";
-
-                            xlWorkSheet[ss].Cells[20, 1] = "% of Online Sale Conversion";
-                            if ((thisvendor.onlineBids) > 0)
-                            {
-                                xlWorkSheet[ss].Cells[20, 2] = thisvendor.numOnlineSales * 100 / (thisvendor.onlineBids) + "%";
-                            }
-                            else
-                            {
-                                xlWorkSheet[ss].Cells[20, 2] = "0%";
-                            }
-                            xlWorkSheet[ss].Cells[20, 3] = "";
-                            xlWorkSheet[ss].Cells[20, 4] = "";
-
-                            xlWorkSheet[ss].get_Range("A6", "D" + 20).Cells.Font.Size = 10;
-                            xlWorkSheet[ss].get_Range("A6", "D" + 20).Cells.Borders.LineStyle = XlLineStyle.xlContinuous;
-                            xlWorkSheet[ss].get_Range("A1", "D" + 20).Cells.Borders.Color = Color.White;
-                            xlWorkSheet[ss].get_Range("A1", "D" + 20).Cells.HorizontalAlignment = XlHAlign.xlHAlignLeft;
-
-                            ss++;
-                        }
-
-                        xlApp.DisplayAlerts = false;
-
-                        xlWorkBook.SaveAs(directory + "\\" + filename, XlFileFormat.xlWorkbookNormal, misValue, misValue, misValue, misValue, XlSaveAsAccessMode.xlExclusive, misValue, misValue, misValue, misValue, misValue);
-                        xlWorkBook.Close(true, misValue, misValue);
-                        xlApp.Quit();
-                        for (ss = 0; ss < numVendors; ss++)
-                        {
-                            newxlWorkSheet[ss] = null;
-                            xlWorkSheet[ss] = null;
-                        }
-                        xlWorkBook = null;
-                        GC.Collect();
-                    }
-                    catch (Exception ee)
-                    {
-                        MessageBox.Show(ee.Message);
-                        LogMsg(ee);
-                    }
-                    finally
-                    {
-                        xlApp.Quit();
-                        newxlWorkSheet = null;
-                        xlWorkSheet = null;
-                        xlWorkBook = null;
-                        GC.Collect();
-                    }
-
-                    return;
-                }
-
-                private void SaveExcelLiveReports(int saleid)
-                {
-                    // Save Online Sales Report
-                    SaveOnlineSalesReport(saleid);
-
-                    // Save Clients Online Report
-                    SaveClientsOnlineReport(saleid);
-
-                    // Save Global Online Report
-                    SaveGlobalOnlineReport();
-
-                    // Save Vendor Online Report
-                    SaveVendorOnlineReport();
-
-                    // Save Sale Report
-                    SaveSaleReport(saleid);
-
-                    return;
-                }
-                */
     }
 }
