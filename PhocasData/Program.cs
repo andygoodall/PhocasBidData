@@ -52,7 +52,7 @@ namespace PhocasBidData
             TimeSpan duration = end - start;
 
             Console.WriteLine("Time taken " + duration.ToString(@"hh\:mm\:ss"));
-            log.Info("Completed data extract " + duration.ToString(@"hh\:mm\:ss"));
+                log.Info("Completed data extract " + duration.ToString(@"hh\:mm\:ss"));
 
             //Console.WriteLine("Press any key to clear...");
             //Console.ReadKey();
@@ -148,10 +148,33 @@ namespace PhocasBidData
         {
             try
             {
+                string datePostfix = DateTime.Now.ToString("-yyyy-MM-dd");
                 string bidcsvFile = csvDataPath + "bidstats.csv";
                 string lotcsvFile = csvDataPath + "lotstats.csv";
                 string biddercsvFile = csvDataPath + "bidderstats.csv";
                 string usercsvFile = csvDataPath + "userstats.csv";
+                string savedbidcsvFile = csvDataPath + "bidstats" + datePostfix + ".csv";
+                string savedlotcsvFile = csvDataPath + "lotstats" + datePostfix + ".csv";
+                string savedbiddercsvFile = csvDataPath + "bidderstats" + datePostfix + ".csv";
+                string savedusercsvFile = csvDataPath + "userstats" + datePostfix + ".csv";
+
+                // Copy the existing csv files and add a date suffix
+                File.Copy(bidcsvFile, savedbidcsvFile, true) ;
+                File.Copy(lotcsvFile, savedlotcsvFile, true);
+                File.Copy(biddercsvFile, savedbiddercsvFile, true);
+                File.Copy(usercsvFile, savedusercsvFile, true);
+
+                Dictionary<int, string> processedSales = new Dictionary<int, string>();
+                processedSales = loadProcessedSales(savedbidcsvFile);
+
+                Dictionary<string, string> processedLots = new Dictionary<string, string>();
+                processedLots = loadProcessedLots(savedlotcsvFile);
+
+                Dictionary<string, string> processedBidders = new Dictionary<string, string>();
+                processedBidders = loadProcessedBidders(savedbiddercsvFile);
+                
+                Dictionary<string, string> processedUsers = new Dictionary<string, string>();
+                processedUsers = loadProcessedUsers(savedusercsvFile);
 
                 using (StreamWriter bidtext = new StreamWriter(bidcsvFile))
                 {
@@ -203,7 +226,9 @@ namespace PhocasBidData
                                 lotHeaders.Append("Seller").Append(",");
                                 lotHeaders.Append("Seller Code").Append(",");
                                 lotHeaders.Append("Hall Bids").Append(",");
-                                lotHeaders.Append("Online Bids").Append("\n");
+                                lotHeaders.Append("Online Bids").Append(",");
+                                lotHeaders.Append("Mobile Bids").Append(",");
+                                lotHeaders.Append("Vehicle Id").Append("\n");
                                 lottext.Write(lotHeaders);
 
                                 StringBuilder userHeaders = new StringBuilder();
@@ -217,43 +242,54 @@ namespace PhocasBidData
                                 usertext.Write(userHeaders);
 
                                 // FTP all the transaction logs we might need
-                                for (int saleNo = 2000; saleNo < 2700; saleNo++)
+//                                for (int saleNo = 1650; saleNo < 4000; saleNo++)
+                                //for (int saleNo = 1650; saleNo < 1655; saleNo++)
+                                for (int saleNo = 2532; saleNo < 2535; saleNo++)
                                 {
                                     try
                                     {
-                                        String thisFile = FTPXML.GetXMLFile(saleNo);
+                                        Boolean alreadyProcessed = CheckIfProcessed(saleNo, processedSales, bidtext);
+//                                                                                Boolean alreadyProcessed = false;
 
-                                        ShowTranscriptOfSale.ProcessXml(saleNo);
-
-                                        ShowTranscriptOfSale.ProcessTransactionLog();
-
-                                        string bidCSVData = ShowTranscriptOfSale.SaveBidData(ShowTranscriptOfSale.ThisSale.SaleNo);
-                                        string lotCSVData = ShowTranscriptOfSale.SaveLotData(ShowTranscriptOfSale.ThisSale.SaleNo);
-                                        string bidderCSVData = ShowTranscriptOfSale.SaveBidderData(ShowTranscriptOfSale.ThisSale.SaleNo);
-                                        string userCSVData = ShowTranscriptOfSale.SaveUserData(ShowTranscriptOfSale.ThisSale.SaleNo);
-
-                                        LogMsg("Bid CSV " + bidCSVData);
-                                        LogMsg("Lot CSV " + lotCSVData);
-                                        LogMsg("Bidder CSV " + bidderCSVData);
-                                        LogMsg("User CSV " + userCSVData);
-
-                                        if (saleNo == ShowTranscriptOfSale.ThisSale.SaleNo)
+                                        if (alreadyProcessed)
                                         {
-                                            bidtext.Write(bidCSVData);
-                                            bidtext.Write("\n");
-                                            lottext.Write(lotCSVData);
-                                            //lottext.Write("\n");
-                                            biddertext.Write(bidderCSVData);
-                                            //biddertext.Write("\n");
-                                            usertext.Write(userCSVData);
-                                            //usertext.Write("\n");
+                                            // Update the other csvs
+                                            UpdateCSVs(saleNo, processedLots, processedBidders, processedUsers, lottext, biddertext, usertext);
                                         }
-//                                        File.Delete(thisFile);
+                                        else
+                                        {
+                                            String thisFile = FTPXML.GetXMLFile(saleNo);
+
+                                            ShowTranscriptOfSale.ProcessXml(saleNo);
+
+                                            ShowTranscriptOfSale.ProcessTransactionLog();
+
+                                            string bidCSVData = ShowTranscriptOfSale.SaveBidData(ShowTranscriptOfSale.ThisSale.SaleNo);
+                                            string lotCSVData = ShowTranscriptOfSale.SaveLotData(ShowTranscriptOfSale.ThisSale.SaleNo);
+                                            string bidderCSVData = ShowTranscriptOfSale.SaveBidderData(ShowTranscriptOfSale.ThisSale.SaleNo);
+                                            string userCSVData = ShowTranscriptOfSale.SaveUserData(ShowTranscriptOfSale.ThisSale.SaleNo);
+
+                                            LogMsg("Bid CSV " + bidCSVData);
+                                            LogMsg("Lot CSV " + lotCSVData);
+                                            LogMsg("Bidder CSV " + bidderCSVData);
+                                            LogMsg("User CSV " + userCSVData);
+
+                                            if (saleNo == ShowTranscriptOfSale.ThisSale.SaleNo)
+                                            {
+                                                bidtext.Write(bidCSVData);
+                                                bidtext.Write("\n");
+                                                lottext.Write(lotCSVData);
+                                                biddertext.Write(bidderCSVData);
+                                                usertext.Write(userCSVData);
+                                            }
+                                            //                                        File.Delete(thisFile);
+                                        }
 
                                     }
                                     catch (Exception ee)
                                     {
-                                        LogMsg("Something went wrong" + ee.Message);
+                                        LogMsg("Something went wrong " + ee.Message + "\n");
+                                        Console.Write("Something went wrong " + ee.Message + "\n");
                                     }
                                 }
                             }
@@ -263,344 +299,181 @@ namespace PhocasBidData
             }
             catch (Exception ee)
             {
+                Console.Write("Exception " + ee.Message);
                 log.Warn("Couldn't get Mobile data " + ee);
             }
         }
 
-                /**
-         * Created on 06/07/2017.
-         * Gets available for sale vehicles etc for Phocas
-         * @author andy
-         *
-         */
-        private static void GetAvailablesCSV()
+        private static void UpdateCSVs(int saleNo, Dictionary<string, string> processedLots, Dictionary<string, string> processedBidders, Dictionary<string, string> processedUsers, StreamWriter lottext, StreamWriter biddertext, StreamWriter usertext)
         {
-            try
+            foreach (KeyValuePair<string, string> entry in processedLots)
             {
-                conn.Open();
-                string sql = null;
+                if (entry.Key.IndexOf(saleNo.ToString()) == 0)
+                {
+                    lottext.Write(entry.Value + "\n");
+                }
+            }
+            foreach (KeyValuePair<string, string> entry in processedUsers)
+            {
+                if (entry.Key.IndexOf(saleNo.ToString()) == 0)
+                {
+                    usertext.Write(entry.Value + "\n");
+                }
+            }
+            foreach (KeyValuePair<string, string> entry in processedBidders)
+            {
+                if (entry.Key.IndexOf(saleNo.ToString()) == 0)
+                {
+                    biddertext.Write(entry.Value + "\n");
+                }
+            }
+        }
 
-                sql += "SELECT DISTINCT on (date, site_id, vehicle_id, vehicle_entrydate)  ";
-                sql += "d.date,    ";
-                sql += "ca.id as vehicle_id,    ";
-                sql += "ca.site_id as site_id,    ";
-                sql += "ca.registration as registration,    ";
-                sql += "(to_char(ca.entrydate, 'dd/mm/yyyy')) AS vehicle_entrydate,     ";
-                sql += "(to_char(ca.exitdate, 'dd/mm/yyyy')) AS vehicle_exitdate,     ";
-                sql += "(to_char(ca.withdrawnstamp, 'dd/mm/yyyy')) AS withdrawn_stamp,   ";
-                sql += "(to_char(ca.onholdstamp, 'dd/mm/yyyy')) AS onhold_stamp,     ";
-                sql += "(to_char(ca.clearonholdstamp, 'dd/mm/yyyy')) AS onholdcleared_stamp,     ";
-                sql += "(to_char(ca.soldstamp, 'dd/mm/yyyy')) AS sold_stamp,     ";
-                sql += "(ca.status),   ";
-                sql += "(ca.onhold),   ";
-                sql += "(ca.withdrawn),   ";
-                sql += "(case when (ca.status is null and ca.entrydate < d.endofdays and (ca.exitdate > d.endofdays or ca.exitdate is null) and    ";
-                sql += "(ca.withdrawn is false or (ca.withdrawn is true and ca.withdrawnstamp > d.endofdays)) and    ";
-                sql += "(ca.onhold is false or (ca.onhold is true and ca.onholdstamp > d.endofdays))) or   ";
-                sql += "(ca.soldstamp > d.endofdays) then 1 else 0 end) as isonsite,   ";
-                sql += "(case when ca.status = 0 and (ca.soldstamp < d.endofdays or ca.soldstamp is null) then 1 else 0 end) as isentered,   ";
-                sql += "(case when ca.status = 1 and ca.soldstamp < d.endofdays then 1 else 0 end) as issold,   ";
-                sql += "(case when ca.status = 2 and ca.soldstamp < d.endofdays then 1 else 0 end) as isunsold,   ";
-                sql += "(case when ca.status = 3 and ca.soldstamp < d.endofdays then 1 else 0 end) as isprovisional,  "; 
-                sql += "(case when ca.withdrawn is true and (ca.withdrawnstamp < d.endofdays and ca.withdrawnstamp is null) then 1 else 0 end) as iswithdrawn,   ";
-                sql += "(case when ca.onhold is true and ca.onholdstamp < d.endofdays and (ca.clearonholdstamp > d.endofdays or (ca.clearonholdstamp is null)) then 1 else 0 end) as isonhold,   ";
-                sql += "(ca.text),   ";
-                sql += "(case when ((ca.status is null and ca.entrydate < d.endofdays and (ca.exitdate > d.endofdays or ca.exitdate is null) and    ";
-                sql += "(ca.withdrawn is false or (ca.withdrawn is true and ca.withdrawnstamp > d.endofdays)) and    ";
-                sql += "(ca.onhold is false or (ca.onhold is true and ca.onholdstamp > d.endofdays)))) or   ";
-                sql += "(ca.soldstamp > d.endofdays) or   ";
-                sql += "(ca.status = 0 and (ca.soldstamp < d.endofdays or ca.soldstamp is null)) or   ";
-                sql += "(ca.status = 2 and ca.soldstamp < d.endofdays) then 1 else 0 end) as availableforsale,    ";
-                sql += "(case when (ca.status = 1 and ca.soldstamp < d.endofdays) or   ";
-                sql += "(ca.status = 3 and ca.soldstamp < d.endofdays) or   ";
-                sql += "(ca.withdrawn is true and (ca.withdrawnstamp < d.endofdays or ca.withdrawnstamp is null)) or   ";
-                sql += "(ca.onhold is true and ca.onholdstamp < d.endofdays and (ca.clearonholdstamp > d.endofdays or ca.clearonholdstamp is null)) then 1 else 0 end) as awaitingdeparture    ";
-                sql += "FROM (     ";
-                sql += "select     ";
-                sql += "to_char(date_trunc('day', ((current_date) - offs)), 'dd/mm/yyyy') AS date,    ";
-                sql += "(current_date) - offs + 1 as endofdays  ";
-                sql += "FROM generate_series(365, 0, -1)      ";
-                sql += "AS offs     ";
-                sql += ") d    ";
-                sql += "LEFT OUTER JOIN (     ";
-                sql += "SELECT     ";
-                sql += "vehicle.id,    "; 
-                sql += "site_id,    ";
-                sql += "registration,   "; 
-                sql += "entrydate,    ";
-                sql += "exitdate,    ";
-                sql += "saleresult.status as status,    ";
-                sql += "saleresult.soldstamp as soldstamp,  "; 
-                sql += "h.text as text,   ";
-                sql += "case when h.text like '%Withdrawn%' then h.stamp else null end as withdrawnstamp,   ";
-                sql += "case when h.text like '%Set on hold%' then h.stamp else null end as onholdstamp,   ";
-                sql += "case when h.text like '%Clear on hold%' then h.stamp else null end as clearonholdstamp,   ";
-                sql += "onhold,    ";
-                sql += "withdrawn   ";
-                sql += "FROM     ";
-                sql += "vehicle vehicle LEFT OUTER JOIN saleresult saleresult ON saleresult.vehicle_id = vehicle.id and saleresult.sale_id = vehicle.lastresult_sale_id    ";
-                sql += "LEFT OUTER JOIN history h ON vehicle.id = h.vehicle_id and (h.text like '%Withdrawn%' or h.text like '%Set on hold%' or h.text like '%Clear on hold%')   ";
-                sql += ") ca    ";
-                sql += "ON (entrydate is not null and entrydate < d.endofdays and (exitdate is null or exitdate > d.endofdays))    ";
-                sql += "order by date, site_id, vehicle_id, vehicle_entrydate   ";
+        private static Dictionary<string, string> loadProcessedUsers(string filename)
+        {
+            Dictionary<string, string> users = new Dictionary<string, string>();
 
+            using (var reader = new StreamReader(filename))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    var values = line.Split(',');
 
-
-                LogMsg("Availables SQL " + sql);
-
-                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
-                NpgsqlDataReader dr = command.ExecuteReader();
-
-                Console.WriteLine("Extracted Availables Data");
-                LogMsg("Extracted Availables Data");
-
-                String fn = csvDataPath + "availables" + ".csv";
-
-                WriteCSV(fn, dr);
-
-                Console.WriteLine("Written Availables Data");
-                LogMsg("Written Availables Data");
-
+                    try
+                    {
+                        users.Add(values[0] + "-" + values[4], line);
+                    }
+                    catch (ArgumentException de)
+                    { 
+                    }
+                    catch (Exception ee)
+                    {
+                        Console.Write("Something else went wrong " + ee.Message);
+                    }
+                }
             }
 
-            catch (NpgsqlException ne)
+            return users;
+        }
+
+        private static Dictionary<string, string> loadProcessedBidders(string filename)
+        {
+            Dictionary<string, string> bidders = new Dictionary<string, string>();
+
+
+            using (var reader = new StreamReader(filename))
             {
-                Console.WriteLine("SQL Error {0}", ne.Message);
-                LogMsg(ne);
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    var values = line.Split(',');
+
+                    try
+                    {
+                        bidders.Add(values[0] + "-" + values[4], line);
+                    }
+                    catch (ArgumentException de)
+                    {
+
+                    }
+                    catch (Exception ee)
+                    {
+                        Console.Write("Something else wnet wrong " + ee.Message);
+                    }
+                }
             }
 
-            catch (IOException ie)
+            return bidders;
+        }
+
+        private static Dictionary<string, string> loadProcessedLots(string filename)
+        {
+            Dictionary<string, string> lots = new Dictionary<string, string>();
+
+
+            using (var reader = new StreamReader(filename))
             {
-                Console.WriteLine("IOException Error {0}", ie.Message);
-                LogMsg(ie);
-            }
-            catch (WebException we)
-            {
-                Console.WriteLine("Upload File Failed, status {0}", we.Message);
-                LogMsg(we);
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    var values = line.Split(',');
+
+                    try
+                    {
+                        lots.Add(values[1], line);
+                    }
+                    catch (ArgumentException de)
+                    {
+                        // Ignoring duplicates
+                        //Console.Write("How? " + de.Message);
+                    }
+                    catch (Exception ee)
+                    {
+                        // Catchall exception 
+                        Console.Write("Something else went wrong " + ee.Message);
+                    }
+                }
             }
 
-            finally
+            return lots;
+        }
+
+        private static Dictionary<int, string> loadProcessedSales(string filename)
+        {
+            Dictionary<int, string> sales = new Dictionary<int, string>();
+
+            using (var reader = new StreamReader(filename))
             {
-                conn.Close();
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    var values = line.Split(',');
+
+                    int saleNo;
+                    if (Int32.TryParse(values[0], out saleNo))
+                    {
+                        DateTime saleStart;
+                        if (DateTime.TryParse(values[2], out saleStart))
+                        {
+                            if (saleStart < DateTime.Today)
+                            {
+                                if (saleNo > 2626)
+                                {
+                                    Console.WriteLine("Up to date");
+                                }
+                                sales.Add(saleNo, line);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Ignoring parsing errors - header row etc
+                        Console.WriteLine("String could not be parsed - " + values);
+                    }
+
+                }
             }
+
+            return sales;
+        }
+
+        private static bool CheckIfProcessed(int saleNo, Dictionary<int, string> ProcessedSales, StreamWriter biddata)
+        {
+            // Check the existing BidStats file if this sale is already there
+            if (ProcessedSales.ContainsKey(saleNo)) 
+            {
+                string data;
+                if (ProcessedSales.TryGetValue(saleNo, out data))
+                {
+                    biddata.Write(data + "\n");
+                    return true;
+                }
+            }
+            return false;
 
         }
 
-        /**
-         * Created on 12/05/2017.
-         * Gets vehicles on site for Phocas
-         * @author andy
-         *
-         */
-        private static void GetStockCSV()
-        {
-            try
-            {
-                conn.Open();
-                string sql = null;
-
-                // Find all vehicles on site
-
-                sql += "select vehicle.id as id, registration, site_id, lastresult_sale_id,  ";
-                sql += "case when capcoding.manufacturer is not null then capcoding.manufacturer else make end as make, ";
-                sql += "case when capcoding.shortmodel is not null then capcoding.shortmodel else model end as model, ";
-                sql += "to_char(vehicle.entrydate, 'dd/mm/yyyy') AS vehicle_entrydate,  ";
-                sql += "((EXTRACT(epoch from age(NOW(), vehicle.entrydate)) / 86400)::int) AS daysonsite, ";
-                sql += "case when saleresult.status is null then 1 else 0 end as awaitingcount,  ";
-                sql += "case when saleresult.status = 0 then 1 else 0 end as enteredcount,  ";
-                sql += "case when saleresult.status = 1 then 1 else 0 end as soldcount,  ";
-                sql += "case when saleresult.status = 2 then 1 else 0 end as unsoldcount,  ";
-                sql += "case when saleresult.status = 3 then 1 else 0 end as provisionalcount,  ";
-                sql += "case when onhold is true then 1 else 0 end as onhold, ";
-                sql += "case when withdrawn is true then 1 else 0 end as withdrawn, ";
-                sql += "pricing_closingprice,  ";
-                sql += "seller.accountnumber as selleraccountnumber,  ";
-                sql += "buyer.accountnumber as buyeraccountnumber,  ";
-                sql += "to_char(vehicle.exitdate, 'dd/mm/yyyy') AS vehicle_exitdate  ";
-                sql += "FROM ";
-                sql += "public.vehicle vehicle LEFT OUTER JOIN public.capcoding capcoding ON capcoding.vehiclecode = vehicle.capcode  ";
-                sql += "LEFT OUTER JOIN public.saleresult saleresult ON saleresult.vehicle_id = vehicle.id and saleresult.sale_id = vehicle.lastresult_sale_id ";
-                sql += "INNER JOIN public.client seller ON vehicle.seller_id = seller.id ";
-                sql += "LEFT OUTER JOIN public.client buyer ON vehicle.buyer_id = buyer.id ";
-                sql += "where exitdate is null and entrydate is not null order by entrydate  ";
-
-                LogMsg("Stock SQL " + sql);
-
-                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
-                NpgsqlDataReader dr = command.ExecuteReader();
-
-                Console.WriteLine("Extracted Stock Data");
-                LogMsg("Extracted Stock Data");
-
-
-                String fn = csvDataPath + "stock" + ".csv";
-
-                WriteCSV(fn, dr);
-
-                Console.WriteLine("Written Stock Data");
-                LogMsg("Written Stock Data");
-
-            }
-
-            catch (NpgsqlException ne)
-            {
-                Console.WriteLine("SQL Error {0}", ne.Message);
-                LogMsg(ne);
-            }
-
-            catch (IOException ie)
-            {
-                Console.WriteLine("IOException Error {0}", ie.Message);
-                LogMsg(ie);
-            }
-            catch (WebException we)
-            {
-                Console.WriteLine("Upload File Failed, status {0}", we.Message);
-                LogMsg(we);
-            }
-
-            finally
-            {
-                conn.Close();
-            }
-
-        }
-
-        /**
-         * Created on 10/11/2016.
-         * Gets on site records for Phocas
-         * @author andy
-         *
-         */
-        private static void GetOnSiteRecordsCSV()
-        {
-            try
-            {
-                conn.Open();
-                string sql = null;
-
-                // Find all Vehicle entry dates
-
-
-                sql += "SELECT a.id, a.registration, a.site_id, 1 as onsite, to_char(d.as_of_date, 'dd/mm/yyyy') as stockdate ";
-                sql += "FROM (  ";
-                sql += "SELECT d::date AS as_of_date  ";
-                sql += "FROM generate_series(date '2016-01-01', now(), interval '1 day') d  ";
-                sql += ") d  ";
-                sql += "JOIN vehicle a ON (d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null) or ";
-                sql += "(d.as_of_date > a.entrydate and a.exitdate is null) ";
-                sql += "JOIN LATERAL (  ";
-                sql += "SELECT id  ";
-                sql += "FROM vehicle  ";
-                sql += "WHERE (d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null) or ";
-                sql += "(d.as_of_date > a.entrydate and a.exitdate is null) ";
-                sql += "ORDER BY as_of_date DESC  ";
-                sql += "LIMIT 1  ";
-                sql += ") b ON (d.as_of_date between a.entrydate and a.exitdate and a.entrydate is not null) or ";
-                sql += "(d.as_of_date > a.entrydate and a.exitdate is null) ";
-                sql += "ORDER BY a.entrydate, d.as_of_date  ";
-
-                LogMsg("On Site Records SQL " + sql);
-
-                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
-                NpgsqlDataReader dr = command.ExecuteReader();
-
-                Console.WriteLine("Extracted On Site Records Data");
-                LogMsg("Extracted On Site Records Data");
-
-                String fn = csvDataPath + "onsiterecords" + ".csv";
-
-                WriteCSV(fn, dr);
-
-                Console.WriteLine("Written On Site Records Data");
-                LogMsg("Written On Site Records Data");
-            }
-
-            catch (NpgsqlException ne)
-            {
-                Console.WriteLine("SQL Error {0}", ne.Message);
-                LogMsg(ne);
-            }
-
-            catch (IOException ie)
-            {
-                Console.WriteLine("IOException Error {0}", ie.Message);
-                LogMsg(ie);
-            }
-            catch (WebException we)
-            {
-                Console.WriteLine("Upload File Failed, status {0}", we.Message);
-                LogMsg(we);
-            }
-
-            finally
-            {
-                conn.Close();
-            }
-
-        }
-
-        private static void GetGeoDataCSV()
-        {
-            try
-            {
-                conn.Open();
-                string sql = null;
-
-                sql += "select ";
-                sql += "min(vehicle_id) as vehicle_id,  ";
-                sql += "min(to_char(timestamp, 'dd/mm/yyyy')) as timestamp,  ";
-                sql += "min(case when sale_id is null then 0 else sale_id end) as sale_id,   ";
-                sql += "min(ipaddress),  ";
-                sql += "min(username) as username,  ";
-                sql += "count(vehicle_id) as vehicleviews, ";
-                sql += "min((regexp_replace((case when position('country_code' IN geodata) > -1 then substring(geodata from (position('country_code' in geodata) + 15) for 2) else '' end), '[\"]', '', 'g'))) as countrycode,  ";
-                sql += "min((regexp_replace((case when position('region_code' IN geodata) > -1 then substring(geodata from (position('region_code' in geodata) + 14) for 3) else '' end), '[\",]', '', 'g'))) as regioncode,  ";
-                sql += "min((regexp_replace((case when position('zip_code' IN geodata) > -1 then substring(geodata from (position('zip_code' in geodata) + 11) for 6) else '' end), '[\",tim]', '', 'g'))) as postcode  ";
-                sql += "from webanalytics   ";
-                sql += "group by sale_id, ipaddress, vehicle_id ";
-                sql += "order by sale_id ";
-
-                LogMsg("Geodata SQL " + sql);
-
-                NpgsqlCommand command = new NpgsqlCommand(sql, conn);
-                NpgsqlDataReader dr = command.ExecuteReader();
-
-                Console.WriteLine("Extracted Geo Data");
-                LogMsg("Extracted Geo Data");
-
-                String fn = csvDataPath + "geodata" + ".csv";
-
-                WriteCSV(fn, dr);
-
-                Console.WriteLine("Written Geo Data");
-                LogMsg("Written Geo Data");
-            }
-
-            catch (NpgsqlException ne)
-            {
-                Console.WriteLine("SQL Error {0}", ne.Message);
-                LogMsg(ne);
-            }
-
-            catch (IOException ie)
-            {
-                Console.WriteLine("IOException Error {0}", ie.Message);
-                LogMsg(ie);
-            }
-            catch (WebException we)
-            {
-                Console.WriteLine("Upload File Failed, status {0}", we.Message);
-                LogMsg(we);
-            }
-
-            finally
-            {
-                conn.Close();
-            }
-
-        }
 
         static public string DecodeFrom64(string encodedData)
         {

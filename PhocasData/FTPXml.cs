@@ -71,12 +71,12 @@ namespace PhocasBidData
             try
             {
                 // Ftp Server settings
-                /*                Host = config.FtpServer;
+/*                                Host = config.FtpServer;
                                 Username = config.FtpUser;
                                 Password = Auction.DecodeFrom64(config.FtpPassword);
                                 Port = Int32.Parse(config.FtpPort);*/
-                Host = "54.154.210.120";
-                //Host = "192.168.44.40";
+//                Host = "54.154.210.120";
+                Host = "192.168.44.40";
                 Username = "Humboldt";
                 Password = "RyG5h9cb9B";
                 Port = 990;
@@ -92,97 +92,88 @@ namespace PhocasBidData
                 return "";
             }
 
-            string targetDirectory = "E:\\TransactionLogs";
+            string targetDirectory = "C:\\TransactionLogs";
 
             // Check if we've already got the file locally
-            string[] localItems = Directory.GetFiles(targetDirectory);
-            tl = new TransactionLogs[localItems.Length];
-            alltl = new TransactionLogs[localItems.Length];
+            /*            string[] localItems = Directory.GetFiles(targetDirectory);
+                        tl = new TransactionLogs[localItems.Length];
+                        alltl = new TransactionLogs[localItems.Length];
+                        int ii = 0;
+
+                        foreach (string transactionFile in localItems)
+                        {
+                            if ((transactionFile.IndexOf("_") > -1) && (transactionFile.IndexOf("Transaction") > -1))
+                            {
+                                try
+                                {
+                                    if ((transactionFile.IndexOf("_") > -1) && (transactionFile.Length > 41))
+                                    {
+                                        // Format Date
+                                        string pattern = "yyyy-MM-dd_HH-mm-ss_";
+                                        DateTime parsedDate;
+
+                                        if (DateTime.TryParseExact(transactionFile.Substring(transactionFile.IndexOf("_") + 1, 20), pattern, null,
+                                                                    DateTimeStyles.None, out parsedDate))
+                                        {
+                                            // Check if this is today and if so skip and ftp
+                                            if (parsedDate == DateTime.Today) {
+                                                break;
+                                            }
+                                            alltl[ii].TimeRecorded = parsedDate;
+                                        }
+
+                                        alltl[ii].SaleNo = transactionFile.Substring(0, transactionFile.IndexOf("_"));
+                                        alltl[ii].Filename = transactionFile;
+
+                                        ii++;
+                                    }
+                                }
+                                catch (IOException ie)
+                                {
+                                    // Skip it for now
+                                    LogMsg(ie.Message);
+                                }
+                                catch (FormatException fe)
+                                {
+                                    // Skip it for now
+                                    LogMsg(fe.Message);
+                                }
+                                catch (IndexOutOfRangeException fe)
+                                {
+                                    // Skip it for now
+                                    LogMsg(fe.Message);
+                                }
+                                catch (Exception ee)
+                                {
+                                    // Skip it for now
+                                    LogMsg(ee.Message);
+                                }
+                            }
+                        }
+
+                        ulong? largest = 0;
+                        foreach (TransactionLogs transactionLog in alltl)
+                        {
+                            if (transactionLog.SaleNo != null)
+                            {
+                                if (transactionLog.SaleNo.IndexOf(saleid.ToString()) >= 18)
+                                {
+                                    ulong? size = (ulong?)new System.IO.FileInfo(transactionLog.Filename).Length;
+                                    if (size > largest)
+                                    {
+                                        thisone = transactionLog.Filename;
+                                        largest = size;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (thisone != "") return (thisone);
+            */
+
+            ulong? largest = 0;
             int ii = 0;
 
-            foreach (string transactionFile in localItems)
-            {
-                if ((transactionFile.IndexOf("_") > -1) && (transactionFile.IndexOf("Transaction") > -1))
-                {
-                    try
-                    {
-                        if ((transactionFile.IndexOf("_") > -1) && (transactionFile.Length > 41))
-                        {
-                            // Format Date
-                            string pattern = "yyyy-MM-dd_HH-mm-ss_";
-                            DateTime parsedDate;
-
-                            if (DateTime.TryParseExact(transactionFile.Substring(transactionFile.IndexOf("_") + 1, 20), pattern, null,
-                                                        DateTimeStyles.None, out parsedDate))
-                            {
-                                // Check if this is today and if so skip and ftp
-                                if (parsedDate == DateTime.Today) {
-                                    break;
-                                }
-                                alltl[ii].TimeRecorded = parsedDate;
-                            }
-
-                            alltl[ii].SaleNo = transactionFile.Substring(0, transactionFile.IndexOf("_"));
-                            alltl[ii].Filename = transactionFile;
-
-                            ii++;
-                        }
-                    }
-                    catch (IOException ie)
-                    {
-                        // Skip it for now
-                        LogMsg(ie.Message);
-                    }
-                    catch (FormatException fe)
-                    {
-                        // Skip it for now
-                        LogMsg(fe.Message);
-                    }
-                    catch (IndexOutOfRangeException fe)
-                    {
-                        // Skip it for now
-                        LogMsg(fe.Message);
-                    }
-                    catch (Exception ee)
-                    {
-                        // Skip it for now
-                        LogMsg(ee.Message);
-                    }
-                }
-            }
-
-/*            int showTls = localItems.Length;
-            int realtls = 0;
-
-            // Sort by most recent first
-            Array.Sort<TransactionLogs>(alltl, (y, x) => x.TimeRecorded.CompareTo(y.TimeRecorded));
-
-            // Only list a couple of pages or so
-            if (showTls > 25)
-            {
-                showTls = 25;
-            }
-            */
-            ulong? largest = 0;
-            foreach (TransactionLogs transactionLog in alltl)
-            {
-                if (transactionLog.SaleNo != null)
-                {
-                    if (transactionLog.SaleNo.IndexOf(saleid.ToString()) >= 18)
-                    {
-                        ulong? size = (ulong?)new System.IO.FileInfo(transactionLog.Filename).Length;
-                        if (size > largest)
-                        {
-                            thisone = transactionLog.Filename;
-                            largest = size;
-                        }
-                    }
-                }
-            }
-
-            if (thisone != "") return (thisone);
-
-            ii = 0;
             // Download the XML transcript and pop it into AMS...
             using (FTPSClient client = new FTPSClient())
             {
@@ -216,7 +207,6 @@ namespace PhocasBidData
                 try
                 {
                     // Change to Transaction log directory
-                    //client.SetCurrentDirectory("SaleTransactionLog");
                     String pwd = client.GetCurrentDirectory();
                     client.SetCurrentDirectory("TransactionLogs");
                 }
@@ -230,7 +220,7 @@ namespace PhocasBidData
                 {
                     string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                                 @"Humboldt\AuctionController\transactionlogs\");
-                    directory = "c:\\TransactionLogs\\";
+                    directory = "C:\\TransactionLogs\\";
                     // Make sure directory exists
                     if (Directory.Exists(directory))
                     {
@@ -240,100 +230,6 @@ namespace PhocasBidData
                         Directory.CreateDirectory(directory);
                     }
 
-/*                    if (saleid == -1)
-                    {
-                        List<DirectoryListItem> ftpItems = client.GetDirectoryList().ToList();
-                        tl = new TransactionLogs[ftpItems.Count];
-                        alltl = new TransactionLogs[ftpItems.Count];
-
-                        LogMsg("GetXMLFile - No Current Sale");
-
-                        foreach (DirectoryListItem FtpItem in ftpItems)
-                        {
-                            if ((FtpItem.Name.IndexOf("_") > -1) && (FtpItem.Name.IndexOf("Transaction") > -1))
-                            {
-                                try
-                                {
-                                    alltl[ii].SaleNo = FtpItem.Name.Substring(0, FtpItem.Name.IndexOf("_"));
-                                    // Format Date
-                                    string pattern = "yyyy-MM-dd_HH-mm-ss_";
-                                    DateTime parsedDate;
-
-                                    if (DateTime.TryParseExact(FtpItem.Name.Substring(FtpItem.Name.IndexOf("_") + 1, 20), pattern, null,
-                                                              DateTimeStyles.None, out parsedDate))
-                                    {
-                                        alltl[ii].TimeRecorded = parsedDate;
-                                    }
-                                    else
-                                    {
-
-                                    }
-                                    alltl[ii].Filename = FtpItem.Name;
-                                    ii++;
-                                }
-                                catch (IOException ie)
-                                {
-                                    // Skip it for now
-                                    LogMsg(ie.Message);
-                                }
-                                catch (FormatException fe)
-                                {
-                                    // Skip it for now
-                                    LogMsg(fe.Message);
-                                }
-                                catch (IndexOutOfRangeException fe)
-                                {
-                                    // Skip it for now
-                                    LogMsg(fe.Message);
-                                }
-                                catch (Exception ee)
-                                {
-                                    // Skip it for now
-                                    LogMsg(ee.Message);
-                                }
-                            }
-                        }
-
-/*                        showTls = ftpItems.Count;
-                        realtls = 0;
-
-                        // Sort by most recent first
-                        Array.Sort<TransactionLogs>(alltl, (y, x) => x.TimeRecorded.CompareTo(y.TimeRecorded));
-
-                        // Only list a couple of pages or so
-                        if (showTls > 25)
-                        {
-                            showTls = 25;
-                        }
-
-                        for (ii = 0; ii < showTls; ii++)
-                        {
-                            LogMsg("ii " + ii + " Sale No " + alltl[ii].SaleNo + " TimeRec " + alltl[ii].TimeRecorded + " filename " + alltl[ii].Filename);
-                            // Extract AMS data from tl
-                            alltl[ii] = ExtractAMSData(client, directory, alltl[ii]);
-                            // If this isn't a real entry we really don't want it in the pick list
-                            if (alltl[ii].AMSSaleCode != null)
-                            {
-                                tl[realtls] = alltl[ii];
-                                LogMsg("AMS Sale No " + tl[realtls].AMSSaleCode + " Sale Date " + tl[realtls].AMSSaleDate);
-                                realtls++;
-                            }
-                        }
-
-                        //                        ChooseTransactionLog TransactionDialog = new ChooseTransactionLog();
-                        //                        TransactionDialog.ShowDialog();
-                        CurrentTransactionLog = 0;
-
-                        if (CurrentTransactionLog > -1)
-                        {
-                            thisone = tl[CurrentTransactionLog].Filename;
-                        }
-                        else
-                        {
-                            return "";
-                        }
-                    }
-                    else*/
                     {
                         // Find latest file
                         List<DirectoryListItem> ftpItems = client.GetDirectoryList().ToList();

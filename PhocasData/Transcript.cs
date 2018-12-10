@@ -39,6 +39,7 @@ namespace PhocasBidData
             public string retractBid { get; set; }
             public string bidderId { get; set; }
             public string bidderType { get; set; }
+            public string bidderOrigin { get; set; }
             public string name { get; set; }
             public string company { get; set; }
             public string webCode { get; set; }
@@ -59,6 +60,7 @@ namespace PhocasBidData
             public string clientMessage { get; set; }
             public int onlineBids { get; set; }
             public int hallBids { get; set; }
+            public int mobileBids { get; set; }
         }
 
         public class transcript : IEnumerable
@@ -95,6 +97,7 @@ namespace PhocasBidData
             public string buyerName { get; set; }
             public string buyerCompany { get; set; }
             public string buyerType { get; set; }
+            public string buyerOrigin { get; set; }
             public string buyerWebCode { get; set; }
             public string buyerSiteCode { get; set; }
             public string closingBid { get; set; }
@@ -135,6 +138,7 @@ namespace PhocasBidData
             public string buyerName { get; set; }
             public string buyerCompany { get; set; }
             public string buyerType { get; set; }
+            public string buyerOrigin { get; set; }
             public string buyerWebCode { get; set; }
             public string buyerSiteCode { get; set; }
             public int Bids { get; set; }
@@ -281,12 +285,32 @@ namespace PhocasBidData
             public string bidderCompany { get; set; }
             public int numBids { get; set; }
             public string bidderType { get; set; }
+            public string bidderOrigin { get; set; }
         }
 
         public class Bidders : IEnumerable
         {
             public readonly System.Collections.Generic.List<Bidder> dd = new System.Collections.Generic.List<Bidder>();
 
+            public bool addbidder(Bidder thisbidder, bool client)
+            {
+                if (thisbidder.bidderId != null) thisbidder.bidderId = thisbidder.bidderId.Trim();
+                if (thisbidder.bidderName != null) thisbidder.bidderName = thisbidder.bidderName.Trim();
+                var b = dd.Where(d => ((d.bidderName == thisbidder.bidderName) && (d.bidderType == thisbidder.bidderType))).FirstOrDefault();
+                if (b == null)
+                {
+                    if (client) thisbidder.numBids = 1;
+                    dd.Add(thisbidder);
+                    return true;
+                }
+                else
+                {
+                    updatebidder(thisbidder, client);
+                }
+                return false;
+            }
+
+            /*
             public bool addbidder(Bidder thisbidder, bool client)
             {
                 var b = dd.Where(d => ((d.bidderName == thisbidder.bidderName) && (d.bidderType == thisbidder.bidderType))).FirstOrDefault();
@@ -306,7 +330,7 @@ namespace PhocasBidData
                     updatebidder(thisbidder, client);
                 }
                 return false;
-            }
+            }*/
 
             public bool updatebidder(Bidder thisbidder, bool client)
             {
@@ -423,6 +447,7 @@ namespace PhocasBidData
             string highestHallBid = "";
             int onlineBids = 0;
             int hallBids = 0;
+            int mobileBids = 0;
             int clientCount = 0;
 
             onlineClients = new Bidders();
@@ -430,7 +455,7 @@ namespace PhocasBidData
             var directory = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                                             @"Humboldt\AuctionController\transactionlogs"));
 
-            directory = new DirectoryInfo("E:\\TransactionLogs\\");
+            directory = new DirectoryInfo("C:\\TransactionLogs\\");
 
             if (directory.Exists == false)
             {
@@ -440,7 +465,7 @@ namespace PhocasBidData
             Transcript = "";
             if (CurrentSale > 0)
             {
-                SearchString = CurrentSale.ToString() + "*.xml";
+                 SearchString = CurrentSale.ToString() + "*.xml";
             }
             else
             {
@@ -518,6 +543,7 @@ namespace PhocasBidData
                             if (reader.Name.IndexOf("vehicle") > -1)
                             {
                                 vehicleId = reader["id"];
+                                tr.vehicleId = vehicleId;
                             }
                             if (reader.Name.IndexOf("bidder") > -1)
                             {
@@ -631,6 +657,15 @@ namespace PhocasBidData
                             if (field2.IndexOf("origin") > -1)
                             {
                                 tr.bidderType = reader.Value;
+                                tr.bidderOrigin = reader.Value;
+                                if (tr.action.IndexOf("Online bid") > -1)
+                                {
+                                    if ((tr.bidderType.IndexOf("Mobile") > -1) || (tr.bidderOrigin.IndexOf("Mobile") > -1)) 
+                                    {
+                                        mobileBids++;
+                                        onlineBids--;
+                                    }
+                                }
                                 field2 = "";
                             }
                             if (field2.IndexOf("message") > -1)
@@ -709,7 +744,7 @@ namespace PhocasBidData
                                         (reader.Value.IndexOf("Mobile") > -1) || (reader.Value.IndexOf("Online") > -1) )
                                     {
                                         tr.bidderType = reader.Value;
-                                        if ((tr.bidderType == "Web") || (tr.bidderType == "Mobile") || (tr.bidderType == "Online"))
+                                        if (((tr.bidderType == "Web") || (tr.bidderType == "Online")) && (tr.action.IndexOf("Online bid") > -1))
                                         {
                                             highestOnlineBid = tr.bidValue;
                                             onlineBids++;
@@ -728,9 +763,12 @@ namespace PhocasBidData
                                             tr.highestOnlineBid = highestOnlineBid;
                                             highestOnlineBid = "";
                                             highestHallBid = "";
+                                            tr.mobileBids = mobileBids;
                                             tr.onlineBids = onlineBids;
+                                            tr.hallBids = hallBids;
                                             onlineBids = 0;
                                             hallBids = 0;
+                                            mobileBids = 0;
                                         }
                                         else
                                         {
@@ -739,14 +777,18 @@ namespace PhocasBidData
                                             highestHallBid = "";
                                             highestOnlineBid = "";
                                             tr.hallBids = hallBids;
+                                            tr.mobileBids = mobileBids;
+                                            tr.onlineBids = onlineBids;
                                             hallBids = 0;
                                             onlineBids = 0;
+                                            mobileBids = 0;
                                         }
                                     }
                                     field3 = "";
                                 }
                                 if (field3.IndexOf("origin") > -1)
                                 {
+                                    tr.bidderOrigin = reader.Value;
                                     tr.bidderType = reader.Value;
                                     field3 = "";
                                 }
@@ -792,8 +834,8 @@ namespace PhocasBidData
                             {
                                 if (field4.IndexOf("name") > -1)
                                 {
-                                    tr.vendorName = reader.Value;
-                                    tr.name = reader.Value;
+                                    tr.vendorName = reader.Value.Replace(",",";");
+                                    tr.name = reader.Value.Replace(",", ";");
                                     field4 = "";
                                 }
                                 if (field4.IndexOf("code") > -1)
@@ -818,6 +860,7 @@ namespace PhocasBidData
                                 }
                                 if (field4.IndexOf("origin") > -1)
                                 {
+                                    tr.bidderOrigin = reader.Value;
                                     tr.bidderType = reader.Value;
                                     field4 = "";
                                 }
@@ -842,6 +885,9 @@ namespace PhocasBidData
                                     {
                                         Transcript += "Lot Changed " + tr.lot + " - " + tr.make + " " + tr.model + " - " + tr.registration;
                                         // if (tr.enginesize.Length > 0) Transcript += tr.enginesize + "cc";
+                                        hallBids = 0;
+                                        onlineBids = 0;
+                                        mobileBids = 0;
                                     }
                                     if (tr.action.IndexOf("Sale Closed") > -1)
                                     {
@@ -876,7 +922,7 @@ namespace PhocasBidData
                                     }
                                     if (tr.action.IndexOf("Online bid") > -1)
                                     {
-                                        if (tr.bidderType == "Mobile")
+                                        if ((tr.bidderType == "Mobile") || (tr.bidderOrigin == "Mobile"))
                                         {
                                             Transcript += "Received Mobile Bid: " + tr.lot + " - £" + tr.bidValue + " for (" + tr.bidderId + ", " + tr.name + ", " + tr.company + ")";
                                         }
@@ -887,7 +933,7 @@ namespace PhocasBidData
                                     }
                                     if (tr.action.IndexOf("Accepted Online Bid") > -1)
                                     {
-                                        if (tr.bidderType == "Mobile")
+                                        if ((tr.bidderType == "Mobile") || (tr.bidderOrigin == "Mobile"))
                                         {
                                             Transcript += "Accepted Mobile Bid: " + tr.lot + " - £" + tr.bidValue + " for (" + tr.bidderId + ", " + tr.company + ")";
                                         }
@@ -912,11 +958,11 @@ namespace PhocasBidData
                                     {
                                         if (tr.bidderType != null)
                                         {
-                                            if (tr.bidderType == "Web")
+                                            if ((tr.bidderType == "Web") || (tr.bidderOrigin == "Web"))
                                             {
                                                 Transcript += "Online client joined " + tr.name + " " + tr.company;
                                             }
-                                            if (tr.bidderType == "Mobile")
+                                            if ((tr.bidderType == "Mobile") || (tr.bidderOrigin == "Mobile"))
                                             {
                                                 Transcript += "Mobile client joined " + tr.name + " " + tr.company;
                                             }
@@ -930,6 +976,7 @@ namespace PhocasBidData
                                         thisclient.bidderId = tr.bidderId;
                                         thisclient.bidderCompany = tr.company;
                                         thisclient.bidderType = tr.bidderType;
+                                        thisclient.bidderOrigin = tr.bidderOrigin;
                                         if (onlineClients.addbidder(thisclient, true))
                                         {
                                             clientCount++;
@@ -960,13 +1007,13 @@ namespace PhocasBidData
                                         // Currently not reading from log but from list built up from Online user joined
                                         foreach (Bidder thisclient in onlineClients)
                                         {
-                                            if (thisclient.bidderType == "Mobile")
+                                            if ((thisclient.bidderType == "Mobile") || (thisclient.bidderOrigin == "Mobile"))
                                             {
                                                 Transcript += "Mobile client " + thisclient.bidderName + " " + thisclient.bidderCompany + "\n";
                                             }
                                             else
                                             {
-                                                if (thisclient.bidderType == "Web")
+                                                if ((thisclient.bidderType == "Web") || (thisclient.bidderOrigin == "Web"))
                                                 {
                                                     Transcript += "Online client " + thisclient.bidderName + " " + thisclient.bidderCompany + "\n";
                                                 }
@@ -981,9 +1028,11 @@ namespace PhocasBidData
                                             {
                                                 Transcript += "Not Sold: Lot " + tr.lot + " - £" + tr.bidValue;
                                                 tr.onlineBids = onlineBids;
+                                                tr.mobileBids = mobileBids;
                                                 tr.hallBids = hallBids;
                                                 hallBids = 0;
                                                 onlineBids = 0;
+                                                mobileBids = 0;
                                             }
                                             if (tr.outcomeType.IndexOf("Sold") > -1)
                                             {
@@ -993,9 +1042,11 @@ namespace PhocasBidData
                                                     tr.highestHallBid = tr.bidValue;
                                                     tr.highestOnlineBid = highestOnlineBid;
                                                     tr.hallBids = hallBids;
-                                                    hallBids = 0;
                                                     tr.onlineBids = onlineBids;
+                                                    tr.mobileBids = mobileBids;
+                                                    hallBids = 0;
                                                     onlineBids = 0;
+                                                    mobileBids = 0;
                                                 }
                                                 else
                                                 {
@@ -1010,14 +1061,19 @@ namespace PhocasBidData
                                                     tr.highestHallBid = highestHallBid;
                                                     tr.highestOnlineBid = tr.bidValue;
                                                     tr.onlineBids = onlineBids;
+                                                    tr.mobileBids = mobileBids;
                                                     tr.hallBids = hallBids;
                                                     hallBids = 0;
                                                     onlineBids = 0;
+                                                    mobileBids = 0;
                                                 }
                                             }
                                             if (tr.outcomeType.IndexOf("Retracted") > -1)
                                             {
                                                 Transcript += "Retracted: Lot " + tr.lot + " - £" + tr.bidValue;
+                                                hallBids = 0;
+                                                onlineBids = 0;
+                                                mobileBids = 0;
                                             }
                                             if (tr.outcomeType.IndexOf("Provisional") > -1)
                                             {
@@ -1028,9 +1084,11 @@ namespace PhocasBidData
                                                     tr.highestHallBid = tr.bidValue;
                                                     tr.highestOnlineBid = highestOnlineBid;
                                                     tr.onlineBids = onlineBids;
+                                                    tr.mobileBids = mobileBids;
                                                     tr.hallBids = hallBids;
                                                     hallBids = 0;
                                                     onlineBids = 0;
+                                                    mobileBids = 0;
                                                 }
                                                 else
                                                 {
@@ -1045,9 +1103,11 @@ namespace PhocasBidData
                                                     tr.highestHallBid = highestHallBid;
                                                     tr.highestOnlineBid = tr.bidValue;
                                                     tr.onlineBids = onlineBids;
+                                                    tr.mobileBids = mobileBids;
                                                     tr.hallBids = hallBids;
                                                     hallBids = 0;
                                                     onlineBids = 0;
+                                                    mobileBids = 0;
                                                 }
                                             }
                                         }
@@ -1095,6 +1155,9 @@ namespace PhocasBidData
                                         if (tr.outcomeType.IndexOf("Unsold") > -1)
                                         {
                                             Transcript += "Not Sold: Lot " + tr.lot + " - £" + tr.bidValue;
+                                            hallBids = 0;
+                                            onlineBids = 0;
+                                            mobileBids = 0;
                                         }
                                         if (tr.outcomeType.IndexOf("Sold") > -1)
                                         {
@@ -1103,6 +1166,9 @@ namespace PhocasBidData
                                                 Transcript += "Sold to Hall Bidder for £" + tr.bidValue;
                                                 tr.highestHallBid = tr.bidValue;
                                                 tr.highestOnlineBid = highestOnlineBid;
+                                                hallBids = 0;
+                                                onlineBids = 0;
+                                                mobileBids = 0;
                                             }
                                             else
                                             {
@@ -1116,15 +1182,23 @@ namespace PhocasBidData
                                                 }
                                                 tr.highestHallBid = highestHallBid;
                                                 tr.highestOnlineBid = tr.bidValue;
+                                                hallBids = 0;
+                                                onlineBids = 0;
+                                                mobileBids = 0;
                                             }
                                         }
                                         if (tr.outcomeType.IndexOf("Retracted") > -1)
                                         {
                                             Transcript += "Retracted: Lot " + tr.lot + " - £" + tr.bidValue;
+                                            hallBids = 0;
+                                            onlineBids = 0;
+                                            mobileBids = 0;
                                         }
                                         if (tr.outcomeType.IndexOf("Provisional") > -1)
                                         {
-
+                                            hallBids = 0;
+                                            onlineBids = 0;
+                                            mobileBids = 0;
                                             if ((tr.bidderType != null) && (tr.bidderType.IndexOf("Hall") > -1))
                                             {
                                                 Transcript += "Provisionally Sold to Hall Bidder for £" + tr.bidValue;
@@ -1244,19 +1318,38 @@ namespace PhocasBidData
                                     if (tr.bidderType != null)
                                     {
                                         thisclient.bidderType = tr.bidderType;
+                                        thisclient.bidderOrigin = tr.bidderOrigin;
                                     }
                                     else
                                     {
                                         //thisclient.bidderType = "Web";
                                     }
-                                    if (onlineClients.addbidder(thisclient, false))
+
+                                    if ((thisclient.bidderId != null) && (thisclient.bidderName != null) &&
+                                        (thisclient.bidderId.Trim().Equals(thisclient.bidderName.Trim())))
+                                    {
+                                        // Skip matching bidder id and name from online bid received
+                                    }
+                                    else
+                                    {
+                                        if (onlineClients.addbidder(thisclient, false))
+                                        {
+                                            clientCount++;
+                                        }
+                                        else
+                                        {
+                                            onlineClients.updatebidder(thisclient, false);
+                                        }
+                                    }
+
+/*                                    if (onlineClients.addbidder(thisclient, false))
                                     {
                                         clientCount++;
                                     }
                                     else
                                     {
                                         onlineClients.updatebidder(thisclient, false);
-                                    }
+                                    }*/
                                 }
                                 field2 = "";
                             }
@@ -1355,6 +1448,7 @@ namespace PhocasBidData
                             thislot.buyerSiteCode = tr.siteCode;
                             thislot.buyerWebCode = tr.webCode;
                             thislot.buyerType = tr.bidderType;
+                            thislot.buyerOrigin = tr.bidderOrigin;
                             thislot.closingBid = tr.bidValue;
                             thislot.outcomeType = tr.outcomeType;
                             thislot.vendorId = tr.vendorId;
@@ -1477,6 +1571,7 @@ namespace PhocasBidData
                         {
                             if ((String.Equals(thisbidder.bidderName, thisclient.bidderName)) &&
                                 (String.Equals(thisbidder.bidderCompany, thisclient.bidderCompany)) &&
+//                                (String.Equals(thisbidder.bidderOrigin, thisclient.bidderOrigin)) &&
                                 (String.Equals(thisbidder.bidderType, thisclient.bidderType)))
                             {
                                 bfound = true;
@@ -1521,6 +1616,7 @@ namespace PhocasBidData
                         thisbuyer.buyerSiteCode = thislot.buyerSiteCode;
                         thisbuyer.buyerWebCode = thislot.buyerWebCode;
                         thisbuyer.buyerType = thislot.buyerType;
+                        thisbuyer.buyerOrigin = thislot.buyerOrigin;
                         thisbuyer.TotalClosingPrice = Convert.ToDouble(thislot.closingBid);
                         thisbuyer.numLots = 1;
                         thisbuyer.Lots = new lots();
@@ -1733,6 +1829,7 @@ namespace PhocasBidData
                 thisbidder.bidderName = bidderName;
                 thisbidder.bidderCompany = bidderCompany;
                 thisbidder.bidderType = bidderType;
+                thisbidder.bidderOrigin = bidderType;
                 thisbidder.numBids = 1;
 
                 onlineBidders.addbidder(thisbidder, true);
@@ -1887,8 +1984,22 @@ namespace PhocasBidData
                         {
                             if (thisclient.bidderId.Equals(thisbidder.bidderId))
                             {
+                                string biddertype = "Web";
+                                if (thisclient.bidderType.Equals("Online"))
+                                {
+                                    biddertype = "Web";
+                                }
+                                else if (thisclient.bidderType.Equals("Mobile"))
+                                {
+                                    biddertype = "Mobile";
+                                }
+                                else if (thisclient.bidderType.Equals("Web"))
+                                {
+                                    biddertype = "Web";
+                                }
+
                                 csv += "\"" + thisclient.bidderName + "\"" + "," + thisclient.bidderId + ",";
-                                csv += "\"" + thisclient.bidderCompany + "\"" + "," + thisclient.bidderType + ",";
+                                csv += "\"" + thisclient.bidderCompany + "\"" + "," + biddertype + ",";
                                 found = true;
                             }
                             if (found == true) break;
@@ -1976,11 +2087,25 @@ namespace PhocasBidData
                     {
                         string formattedDate = ThisSale.StartTime.ToLocalTime().ToString("yyyy/MM/dd");
 
+                        string biddertype = "Web";
+                        if (thisUser.bidderType.Trim().Equals("Online"))
+                        {
+                            biddertype = "Web";
+                        }
+                        else if (thisUser.bidderType.Equals("Mobile"))
+                        {
+                            biddertype = "Mobile";
+                        }
+                        else if (thisUser.bidderType.Equals("Web"))
+                        {
+                            biddertype = "Web";
+                        }
+
                         csv += saleid + ",";
                         csv += ThisSale.SiteId + ",";
                         csv += formattedDate + ",";
                         csv += "\"" + thisUser.bidderName + "\"" + "," + thisUser.bidderId + ",";
-                        csv += "\"" + thisUser.bidderCompany + "\"" + "," + thisUser.bidderType + "\n";
+                        csv += "\"" + thisUser.bidderCompany + "\"" + "," + biddertype + "\n";
                     }
                 }
 
@@ -2057,47 +2182,58 @@ namespace PhocasBidData
                             }
                             else
                             {
+                                String safeName = "";
+                                String safeCompany = "";
+                                if (tr.name != null) safeName = tr.name.Replace(",", ";");
+                                if (tr.company != null) safeCompany = tr.company.Replace(",", ";");
+
                                 if ((tr.bidderType != null) && (tr.bidderType.IndexOf("Mobile") > -1))
                                 {
-                                    csv += tr.name + "," + tr.company + ",Mobile,";
+                                    
+                                    csv += safeName + "," + safeCompany + ",Mobile,";
                                 }
                                 else
                                 {
-                                    csv += tr.name + "," + tr.company + ",Web,";
+                                    csv += safeName + "," + safeCompany + ",Web,";
                                 }
                             }
-                            csv += tr.bidValue + "," ;
+                            csv += tr.bidValue + ",";
                             csv += tr.outcomeType + ",";
                             if (tr.outcomeType.IndexOf("Sold") == 0)
                             {
-//                                SoldTotal += Convert.ToDouble(tr.bidValue);
+                                //                                SoldTotal += Convert.ToDouble(tr.bidValue);
                             }
                             if (tr.outcomeType.IndexOf("Provisional") == 0)
                             {
-//                                ProvisionalTotal += Convert.ToDouble(tr.bidValue);
+                                //                                ProvisionalTotal += Convert.ToDouble(tr.bidValue);
                             }
-//                            string formattedDate = DateTime.ParseExact(tr.date, "dd/MM/yyyy HH:mm:ss.FFF", 
-//                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd", 
-//                                                    CultureInfo.InvariantCulture);  
-                                                        string formattedDate = DateTime.ParseExact(tr.date, "MM/dd/yyyy HH:mm:ss.FFF", 
-                                                                                CultureInfo.InvariantCulture).ToString("yyyy/MM/dd", 
-                                                                                CultureInfo.InvariantCulture);  
-//                            string formattedDate = tr.date.ToString("yyyy/MM/dd");
-                                                        csv += formattedDate;
+                            //                            string formattedDate = DateTime.ParseExact(tr.date, "dd/MM/yyyy HH:mm:ss.FFF", 
+                            //                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd", 
+                            //                                                    CultureInfo.InvariantCulture);  
+                            string formattedDate = DateTime.ParseExact(tr.date, "MM/dd/yyyy HH:mm:ss.FFF",
+                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
+                                                    CultureInfo.InvariantCulture);
+                            //                            string formattedDate = tr.date.ToString("yyyy/MM/dd");
+                            csv += formattedDate;
 
                         }
                         else
                         {
-//                            string formattedDate = DateTime.ParseExact(tr.date, "dd/MM/yyyy HH:mm:ss.FFF",
-//                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
-//                                                    CultureInfo.InvariantCulture);
-                                                        string formattedDate = DateTime.ParseExact(tr.date, "MM/dd/yyyy HH:mm:ss.FFF",
-                                                                                CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
-                                                                                CultureInfo.InvariantCulture);
-                                                        csv += ",,,," + tr.outcomeType + "," + formattedDate;
+                            //                            string formattedDate = DateTime.ParseExact(tr.date, "dd/MM/yyyy HH:mm:ss.FFF",
+                            //                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
+                            //                                                    CultureInfo.InvariantCulture);
+                            string formattedDate = DateTime.ParseExact(tr.date, "MM/dd/yyyy HH:mm:ss.FFF",
+                                                    CultureInfo.InvariantCulture).ToString("yyyy/MM/dd",
+                                                    CultureInfo.InvariantCulture);
+                            csv += ",,,," + tr.outcomeType + "," + formattedDate;
                         }
-                        csv += "," + tr.vendorName + "," + tr.vendorId + ",";
-                        csv += tr.hallBids + "," + tr.onlineBids + "\n";
+                        String safeVendor = "";
+                        if (tr.vendorName != null)
+                        {
+                            safeVendor = tr.vendorName.Replace(",", ";");
+                        }
+                        csv += "," + safeVendor + "," + tr.vendorId + ",";
+                        csv += tr.hallBids + "," + tr.onlineBids + "," + tr.mobileBids + "," + tr.vehicleId + "\n";
                         ii++;
                     }
                 }
@@ -2107,10 +2243,12 @@ namespace PhocasBidData
             catch (FormatException fe)
             {
                 LogMsg(fe);
+                Console.Write(fe);
             }
             catch (Exception ee)
             {
                 LogMsg(ee);
+                Console.Write(ee);
             }
             finally
             {
