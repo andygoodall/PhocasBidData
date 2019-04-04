@@ -278,6 +278,16 @@ namespace PhocasBidData
         static public vendors Vendors;
         static public int numVendors = 0;
 
+        public class BestBid
+        {
+            public string bestBidbidderId { get; set; }
+            public string bestBidbidderName { get; set; }
+            public string bestBidbidderCompany { get; set; }
+            public int bestBidLot { get; set; }
+            public int bestBidValue { get; set; }
+        }
+        static public System.Collections.Generic.List<BestBid> bestBids = new System.Collections.Generic.List<BestBid>();
+
         public class Bidder
         {
             public string bidderId { get; set; }
@@ -1524,6 +1534,11 @@ namespace PhocasBidData
                                                 tr.name,
                                                 tr.company,
                                                 tr.bidderType);
+
+                            UpdateNextBestBid(bidderId,
+                                                tr.name,
+                                                tr.company,
+                                                tr.bidderType);
                         }
                         if (tr.action.IndexOf("Accepted Online Bid") == 0)
                         {
@@ -1764,6 +1779,9 @@ namespace PhocasBidData
                     case "Aston Barclay Chelmsford":
                         ThisSale.SiteId = 1;
                         break;
+                    case "Aston Barclay Digital":
+                        ThisSale.SiteId = 99;
+                        break;
                     case "Aston Barclay Prees Heath":
                         ThisSale.SiteId = 659779;
                         break;
@@ -1775,6 +1793,9 @@ namespace PhocasBidData
                         break;
                     case "Aston Barclay Donington Park":
                         ThisSale.SiteId = 20846447;
+                        break;
+                    case "Aston Barclay Wakefield":
+                        ThisSale.SiteId = 34457511;
                         break;
                     default:
                         break;
@@ -1789,6 +1810,12 @@ namespace PhocasBidData
                 LogMsg(fe);
             }
 
+            return;
+        }
+
+        private static void UpdateNextBestBid(string bidderId, string p1, string p2, string p3)
+        {
+            //bestBids.Add();
             return;
         }
 

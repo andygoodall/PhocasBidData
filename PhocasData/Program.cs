@@ -242,9 +242,9 @@ namespace PhocasBidData
                                 usertext.Write(userHeaders);
 
                                 // FTP all the transaction logs we might need
-//                                for (int saleNo = 1650; saleNo < 4000; saleNo++)
+                                for (int saleNo = 1650; saleNo < 4000; saleNo++)
                                 //for (int saleNo = 1650; saleNo < 1655; saleNo++)
-                                for (int saleNo = 2532; saleNo < 2535; saleNo++)
+//                                for (int saleNo = 2532; saleNo < 2535; saleNo++)
                                 {
                                     try
                                     {
