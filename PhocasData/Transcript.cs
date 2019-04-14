@@ -1530,10 +1530,17 @@ namespace PhocasBidData
 
                             string bidderId = tr.bidderId;
 
-                            UpdateBidderCounts(bidderId,
-                                                tr.name,
-                                                tr.company,
-                                                tr.bidderType);
+                            if (String.Compare(tr.vendorId, tr.bidderId) != 0)
+                            {
+                                UpdateBidderCounts(bidderId,
+                                                    tr.name,
+                                                    tr.company,
+                                                    tr.bidderType);
+                            }
+                            else
+                            {
+                                LogMsg("Vendor and Buyer Id the same");
+                            }
 
                             UpdateNextBestBid(bidderId,
                                                 tr.name,
@@ -1612,7 +1619,7 @@ namespace PhocasBidData
                     bool bFound = false;
                     foreach (buyer thisbuyer in Buyers)
                     {
-                        if (thislot.buyerId == thisbuyer.buyerId)
+                        if ((thislot.buyerId == thisbuyer.buyerId) && (thislot.buyerId != thislot.vendorId))
                         {
                             thisbuyer.TotalClosingPrice += Convert.ToDouble(thislot.closingBid);
                             thisbuyer.Lots.addlot(thislot);
