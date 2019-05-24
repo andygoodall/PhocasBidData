@@ -11,6 +11,9 @@ using System.Xml;
 using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
+using System.Net.Http.Headers;
+using System.Net.Http;
+using Newtonsoft.Json;
 
 [assembly: log4net.Config.XmlConfigurator(Watch = true)]
 
@@ -35,9 +38,15 @@ namespace PhocasBidData
          */
         public static void Main(String[] args)
         {
+            DateTime start = DateTime.Now;
+
+            Console.WriteLine("Starting e-Hub data extract at " + start);
+            GeteHubData();
+            Console.WriteLine("Completed e-Hub data extract at " + DateTime.Now);
+
             ConnectToDB();
 
-            DateTime start = DateTime.Now;
+            start = DateTime.Now;
 
             Console.WriteLine("Beginning data extract at " + start);
             log.Info("Beginning data extract at " + start);
@@ -52,10 +61,209 @@ namespace PhocasBidData
             TimeSpan duration = end - start;
 
             Console.WriteLine("Time taken " + duration.ToString(@"hh\:mm\:ss"));
-                log.Info("Completed data extract " + duration.ToString(@"hh\:mm\:ss"));
+            log.Info("Completed data extract " + duration.ToString(@"hh\:mm\:ss"));
 
             //Console.WriteLine("Press any key to clear...");
             //Console.ReadKey();
+
+        }
+
+        public class Pwd
+        {
+            public String password { get; set; }
+            public String username { get; set; }
+        }
+
+        public class SendToAuction
+        {
+            public List<e_Hub_Data> data { get; set; }
+        }
+
+        public class Started
+        {
+            public List<e_Hub_Data> data { get; set; }
+        }
+
+        public class SoldToTcbg
+        {
+            public List<e_Hub_Data> data { get; set; }
+        }
+        public class Submitted
+        {
+            public List<e_Hub_Data> data { get; set; }
+        }
+        public class SuccessfullyReturnedCap
+        {
+            public List<e_Hub_Data> data { get; set; }
+        }
+        public class SuccessfullyReturnedTcbg
+        {
+            public List<e_Hub_Data> data { get; set; }
+        }
+        public class eObject
+        {
+            public object exListed { get; set; }
+            public SendToAuction sendToAuction { get; set; }
+            public object exUnsoldAuction { get; set; }
+            public Started started { get; set; }
+            public List<string> people { get; set; }
+            public SoldToTcbg soldToTcbg { get; set; }
+            public Submitted submitted { get; set; }
+            public object exUnsoldTcbg { get; set; }
+            public object exSoldVolLyrtd { get; set; }
+            public SuccessfullyReturnedCap successfullyReturnedCap { get; set; }
+            public SuccessfullyReturnedTcbg successfullyReturnedTcbg { get; set; }
+            public object exSold { get; set; }
+            public object exSoldVolFyrtd { get; set; }
+        }
+
+        public class RootObject
+        {
+            public eObject eObject { get; set; }
+            public object message { get; set; }
+            public object errors { get; set; }
+        }
+
+        public class e_Hub_Data
+        {
+            public long Id { get; set; }
+            public String UserName { get; set; }
+            public String sendDate { get; set; }
+            public String message { get; set; }
+            public String vrm { get; set; }
+            public String type { get; set; }
+        }
+
+
+        private static void GeteHubData()
+        {
+            String endPoint = "http://humdev.astonbarclay.net:8080/login";
+            Pwd data = new Pwd();
+            data.password = "P@ssw0rd";
+            data.username = "AAR003c";
+
+            try
+            {
+                // Login to end point
+                HttpClient httpClientAuthorize = new HttpClient();
+                httpClientAuthorize.BaseAddress = new Uri(endPoint);
+                httpClientAuthorize.DefaultRequestHeaders.Accept.Clear();
+                httpClientAuthorize.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                HttpResponseMessage task = httpClientAuthorize.PostAsJsonAsync(endPoint, data).Result;
+                HttpStatusCode success = task.StatusCode;
+
+                if (success.Equals(HttpStatusCode.OK))
+                {
+                    String bearer = "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJ0ZXN0YWFyMDAzY0B0ZXN0LmNvbSIsInJvbGVzIjoiQnV5IEl0IE5vdyBBY2Nlc3MsRGVhbGVyIEdlbmVyaWMgQXBwcmFpc2FsIEFwcCxMaXZlIEJpZCBBY2Nlc3MsYWNjZXNzX3RvX2V4Y2hhbmdlX2xpc3Rfb25seSxhbXNfY2FzY2FkZV91c2VyLGFtc192ZW5kb3JfY29kZTpBQVIwMDMsZS1IdWIgVXNlcixlLVhjaGFuZ2UgQnV5ZXIsIiwiZXhwIjoxNTU4Njg5MTEzfQ.boUyd0nKyv3H8YsU85wkwxjvXPeC2sUscX_rE7MMjo-1KqLdKg4by2H-xQDWEiSNxTQbu8vgIyVzd9xKhOvaIg";
+//                    String headers = task.Headers.ToString();
+                    HttpResponseHeaders rh = task.Headers;
+                    IEnumerable<string> values;
+                    if (rh.TryGetValues("Authorization", out values))
+                    {
+                        bearer = values.First();
+                    }
+
+                    endPoint = "http://humdev.astonbarclay.net:8080/v.1/report/from/2019-01-01/to/2019-05-31";
+                    HttpClient httpClientData = new HttpClient();
+                    httpClientData.BaseAddress = new Uri(endPoint);
+                    httpClientData.DefaultRequestHeaders.Accept.Clear();
+                    httpClientData.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                    httpClientData.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", bearer);
+
+                    task = httpClientData.GetAsync(endPoint).Result;
+                    success = task.StatusCode;
+                    if (success.Equals(HttpStatusCode.OK))
+                    {
+                        var x = task.Content.ReadAsStringAsync();
+                        var objects = Newtonsoft.Json.JsonConvert.DeserializeObject(x.Result);
+                        List<e_Hub_Data> ed = new List<e_Hub_Data>();
+                        JsonTextReader reader = new JsonTextReader(new StringReader(x.Result));
+                        //RootObject edata = Newtonsoft.Json.JsonConvert.DeserializeObject<RootObject>(x.Result);
+
+                        e_Hub_Data thisEh = new e_Hub_Data();
+                        String val = "";
+                        while (reader.Read())
+                        {
+                            if (reader.Value != null)
+                            {
+                                switch (val)
+                                {
+                                    case "id":
+                                        thisEh = new e_Hub_Data();
+                                        thisEh.Id = (long)reader.Value;
+                                        val = "";
+                                        break;
+                                    case "username":
+                                        thisEh.UserName = (string)reader.Value;
+                                        val = "";
+                                        break;
+                                    case "date":
+                                        thisEh.sendDate = reader.Value.ToString();
+                                        val = "";
+                                        break;
+                                    case "message":
+                                        thisEh.message = (string)reader.Value;
+                                        val = "";
+                                        break;
+                                    case "vrm":
+                                        thisEh.vrm = (string)reader.Value;
+                                        val = "";
+                                        break;
+                                    case "type":
+                                        thisEh.type = (string)reader.Value;
+                                        ed.Add(thisEh);
+                                        val = "";
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                if (reader.TokenType.Equals(JsonToken.PropertyName))
+                                {
+                                    val = (String)reader.Value;
+                                }
+                            }
+                        }
+
+                        String csvData = "";
+                        foreach (e_Hub_Data eh in ed)
+                        {
+                            DateTime dt = Convert.ToDateTime(eh.sendDate);
+                            String dts = dt.ToString("yyyy/MM/dd");
+                            csvData += eh.Id + "," + eh.UserName + "," + dts + "," + eh.vrm + "," + eh.message + "," + eh.type + "\n";
+                        }
+
+                        string usercsvFile = csvDataPath + "ehubstats.csv";
+                        using (StreamWriter usertext = new StreamWriter(usercsvFile))
+                        {
+                            StringBuilder userHeaders = new StringBuilder();
+                            userHeaders.Append("Id").Append(",");
+                            userHeaders.Append("UserName").Append(",");
+                            userHeaders.Append("SendDate").Append(",");
+                            userHeaders.Append("VRM").Append(",");
+                            userHeaders.Append("Message").Append(",");
+                            userHeaders.Append("Type").Append("\n");
+                            usertext.Write(userHeaders);
+                            usertext.Write(csvData);
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Data Unexpected response " + success);
+                        return;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Login Unexpected response " + success);
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                Console.ReadKey();
+            }
 
         }
 
