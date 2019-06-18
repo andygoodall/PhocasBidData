@@ -135,9 +135,16 @@ namespace PhocasBidData
         }
 
 
+        public class e_Hub_User
+        {
+            public String UserName { get; set; }
+            public String AccountCode { get; set; }
+        }
+
         private static void GeteHubData()
         {
             String endPoint = "http://humdev.astonbarclay.net:8080/login";
+            endPoint = "https://api2.astonbarclay.net:8080/login";
             Pwd data = new Pwd();
             data.password = "P@ssw0rd";
             data.username = "AAR003c";
@@ -164,7 +171,8 @@ namespace PhocasBidData
                         bearer = values.First();
                     }
 
-                    endPoint = "http://humdev.astonbarclay.net:8080/v.1/report/from/2019-01-01/to/2019-05-31";
+                    endPoint = "http://humdev.astonbarclay.net:8080/v.1/report/from/2019-01-01/to/2019-12-31";
+                    endPoint = "https://api2.astonbarclay.net/appraisal/v.1/report/from/2019-05-01/to/2019-12-31";
                     HttpClient httpClientData = new HttpClient();
                     httpClientData.BaseAddress = new Uri(endPoint);
                     httpClientData.DefaultRequestHeaders.Accept.Clear();
@@ -172,57 +180,90 @@ namespace PhocasBidData
                     httpClientData.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", bearer);
 
                     task = httpClientData.GetAsync(endPoint).Result;
+
                     success = task.StatusCode;
                     if (success.Equals(HttpStatusCode.OK))
                     {
                         var x = task.Content.ReadAsStringAsync();
                         var objects = Newtonsoft.Json.JsonConvert.DeserializeObject(x.Result);
                         List<e_Hub_Data> ed = new List<e_Hub_Data>();
+                        List<e_Hub_User> eu = new List<e_Hub_User>();
                         JsonTextReader reader = new JsonTextReader(new StringReader(x.Result));
                         //RootObject edata = Newtonsoft.Json.JsonConvert.DeserializeObject<RootObject>(x.Result);
 
                         e_Hub_Data thisEh = new e_Hub_Data();
+                        e_Hub_User thisEu = new e_Hub_User();
                         String val = "";
-                        while (reader.Read())
+                        try
                         {
-                            if (reader.Value != null)
+                            while (reader.Read())
                             {
-                                switch (val)
+                                if (reader.Value != null)
                                 {
-                                    case "id":
-                                        thisEh = new e_Hub_Data();
-                                        thisEh.Id = (long)reader.Value;
-                                        val = "";
-                                        break;
-                                    case "username":
-                                        thisEh.UserName = (string)reader.Value;
-                                        val = "";
-                                        break;
-                                    case "date":
-                                        thisEh.sendDate = reader.Value.ToString();
-                                        val = "";
-                                        break;
-                                    case "message":
-                                        thisEh.message = (string)reader.Value;
-                                        val = "";
-                                        break;
-                                    case "vrm":
-                                        thisEh.vrm = (string)reader.Value;
-                                        val = "";
-                                        break;
-                                    case "type":
-                                        thisEh.type = (string)reader.Value;
-                                        ed.Add(thisEh);
-                                        val = "";
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                if (reader.TokenType.Equals(JsonToken.PropertyName))
-                                {
-                                    val = (String)reader.Value;
+                                    switch (val)
+                                    {
+                                        case "id":
+                                            thisEh = new e_Hub_Data();
+                                            thisEh.Id = (long)reader.Value;
+                                            val = "";
+                                            break;
+                                        case "username":
+                                            thisEh.UserName = (string)reader.Value;
+                                            val = "";
+                                            break;
+                                        case "date":
+                                            thisEh.sendDate = reader.Value.ToString();
+                                            val = "";
+                                            break;
+                                        case "message":
+                                            thisEh.message = (string)reader.Value;
+                                            val = "";
+                                            break;
+                                        case "vrm":
+                                            thisEh.vrm = (string)reader.Value;
+                                            val = "";
+                                            break;
+                                        case "type":
+                                            thisEh.type = (string)reader.Value;
+                                            ed.Add(thisEh);
+                                            val = "";
+                                            break;
+                                        case "people":
+                                            if (thisEu.UserName != null)
+                                            {
+                                                thisEu.AccountCode = (string)reader.Value;
+                                                eu.Add(thisEu);
+                                                thisEu = new e_Hub_User();
+                                            }
+                                            else
+                                            {
+                                                thisEu.UserName = (string)reader.Value;
+                                            }
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    if (reader.TokenType.Equals(JsonToken.PropertyName))
+                                    {
+                                        if (val.IndexOf("people") > -1)
+                                        {
+                                            if (reader.Value.Equals("message"))
+                                            {
+                                                val = "";
+                                            }
+
+                                        }
+                                        else
+                                        {
+                                            val = (String)reader.Value;
+                                        }
+                                    }
                                 }
                             }
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
                         }
 
                         String csvData = "";
@@ -233,8 +274,8 @@ namespace PhocasBidData
                             csvData += eh.Id + "," + eh.UserName + "," + dts + "," + eh.vrm + "," + eh.message + "," + eh.type + "\n";
                         }
 
-                        string usercsvFile = csvDataPath + "ehubstats.csv";
-                        using (StreamWriter usertext = new StreamWriter(usercsvFile))
+                        string ehubcsvFile = csvDataPath + "ehubstats.csv";
+                        using (StreamWriter usertext = new StreamWriter(ehubcsvFile))
                         {
                             StringBuilder userHeaders = new StringBuilder();
                             userHeaders.Append("Id").Append(",");
@@ -243,6 +284,22 @@ namespace PhocasBidData
                             userHeaders.Append("VRM").Append(",");
                             userHeaders.Append("Message").Append(",");
                             userHeaders.Append("Type").Append("\n");
+                            usertext.Write(userHeaders);
+                            usertext.Write(csvData);
+                        }
+
+                        csvData = "";
+                        foreach (e_Hub_User et in eu)
+                        {
+                            csvData += et.UserName + "," + et.AccountCode + "\n";
+                        }
+
+                        string usercsvFile = csvDataPath + "ehubusers.csv";
+                        using (StreamWriter usertext = new StreamWriter(usercsvFile))
+                        {
+                            StringBuilder userHeaders = new StringBuilder();
+                            userHeaders.Append("UserName").Append(",");
+                            userHeaders.Append("AccountNumber").Append("\n");
                             usertext.Write(userHeaders);
                             usertext.Write(csvData);
                         }
@@ -262,7 +319,6 @@ namespace PhocasBidData
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                Console.ReadKey();
             }
 
         }
@@ -450,7 +506,7 @@ namespace PhocasBidData
                                 usertext.Write(userHeaders);
 
                                 // FTP all the transaction logs we might need
-                                for (int saleNo = 1650; saleNo < 4000; saleNo++)
+                                for (int saleNo = 1650; saleNo < 4500; saleNo++)
                                 //for (int saleNo = 1650; saleNo < 1655; saleNo++)
 //                                for (int saleNo = 2532; saleNo < 2535; saleNo++)
                                 {
