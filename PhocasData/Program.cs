@@ -63,8 +63,8 @@ namespace PhocasBidData
             Console.WriteLine("Time taken " + duration.ToString(@"hh\:mm\:ss"));
             log.Info("Completed data extract " + duration.ToString(@"hh\:mm\:ss"));
 
-            //Console.WriteLine("Press any key to clear...");
-            //Console.ReadKey();
+//            Console.WriteLine("Press any key to clear...");
+//            Console.ReadKey();
 
         }
 
@@ -144,7 +144,7 @@ namespace PhocasBidData
         private static void GeteHubData()
         {
             String endPoint = "http://humdev.astonbarclay.net:8080/login";
-            endPoint = "https://api2.astonbarclay.net:8080/login";
+            //endPoint = "https://api2.astonbarclay.net:8080/login";
             Pwd data = new Pwd();
             data.password = "P@ssw0rd";
             data.username = "AAR003c";
@@ -436,7 +436,7 @@ namespace PhocasBidData
 
                 Dictionary<string, string> processedBidders = new Dictionary<string, string>();
                 processedBidders = loadProcessedBidders(savedbiddercsvFile);
-                
+
                 Dictionary<string, string> processedUsers = new Dictionary<string, string>();
                 processedUsers = loadProcessedUsers(savedusercsvFile);
 
@@ -506,9 +506,11 @@ namespace PhocasBidData
                                 usertext.Write(userHeaders);
 
                                 // FTP all the transaction logs we might need
-                                for (int saleNo = 1650; saleNo < 4500; saleNo++)
-                                //for (int saleNo = 1650; saleNo < 1655; saleNo++)
-//                                for (int saleNo = 2532; saleNo < 2535; saleNo++)
+                                // Find the latest /  largest sale no and loop until that
+                                long latestSaleNo = FTPXML.GetLatestSaleNo();
+
+//                                for (int saleNo = 1650; saleNo < latestSaleNo; saleNo++)
+                                for (int saleNo = 1650; saleNo < 5000; saleNo++)
                                 {
                                     try
                                     {
@@ -698,22 +700,29 @@ namespace PhocasBidData
                     if (Int32.TryParse(values[0], out saleNo))
                     {
                         DateTime saleStart;
-                        if (DateTime.TryParse(values[2], out saleStart))
+                        if (values.Length > 2)
                         {
-                            if (saleStart < DateTime.Today)
+                            if (DateTime.TryParse(values[2], out saleStart))
                             {
-                                if (saleNo > 2626)
+                                if (saleStart < DateTime.Today)
                                 {
-                                    Console.WriteLine("Up to date");
+                                    if (saleNo > 2626)
+                                    {
+                                        Console.WriteLine("Up to date");
+                                    }
+                                    sales.Add(saleNo, line);
                                 }
-                                sales.Add(saleNo, line);
                             }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Date format?");
                         }
                     }
                     else
                     {
                         // Ignoring parsing errors - header row etc
-                        Console.WriteLine("String could not be parsed - " + values);
+                        Console.WriteLine("String could not be parsed - " + values[0].ToString());
                     }
 
                 }
@@ -724,6 +733,7 @@ namespace PhocasBidData
 
         private static bool CheckIfProcessed(int saleNo, Dictionary<int, string> ProcessedSales, StreamWriter biddata)
         {
+
             // Check the existing BidStats file if this sale is already there
             if (ProcessedSales.ContainsKey(saleNo)) 
             {

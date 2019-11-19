@@ -54,6 +54,116 @@ namespace PhocasBidData
             return;
         }
 
+
+        internal static long GetLatestSaleNo()
+        {
+            string Host = null;
+            Int32 Port = 0;
+            string Username = null;
+            string Password = null;
+            DateTime Latest = Convert.ToDateTime("1/1/1970");
+
+            Host = "192.168.44.40";
+            Username = "Humboldt";
+            Password = "RyG5h9cb9B";
+            Port = 990;
+
+            long saleNo = 0;
+
+            Console.WriteLine("Opening ftp connection");
+
+            // Download the XML transcript and pop it into AMS...
+            using (FTPSClient client = new FTPSClient())
+            {
+                try
+                {
+                    client.Connect(Host, Port,
+                                   new NetworkCredential(Username,
+                                                         Password),
+                                   ESSLSupportMode.CredentialsRequired | ESSLSupportMode.DataChannelRequested | ESSLSupportMode.Implicit,
+                                   new System.Net.Security.RemoteCertificateValidationCallback(AcceptAllCertifications),
+                                   new System.Security.Cryptography.X509Certificates.X509Certificate(),
+                                   0, 0, 0, 60000, true);
+                    LogMsg("GetLatestSaleNo - FTP Connected ");
+                    Console.WriteLine("FTP connected");
+                }
+                catch (FTPCommandException fe)
+                {
+                    LogMsg(fe);
+                    return 0;
+                }
+                catch (IOException ie)
+                {
+                    LogMsg(ie);
+                    return 0;
+                }
+                catch (SocketException ie)
+                {
+                    LogMsg(ie);
+                    return 0;
+                }
+
+                try
+                {
+                    // Change to Transaction log directory
+                    String pwd = client.GetCurrentDirectory();
+                    client.SetCurrentDirectory("TransactionLogs");
+                }
+                catch (FTPCommandException fe)
+                {
+                    LogMsg(fe);
+                    return 0;
+                }
+
+                try
+                {
+                    string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                                @"Humboldt\AuctionController\transactionlogs\");
+                    directory = "C:\\TransactionLogs\\";
+                    // Make sure directory exists
+                    if (Directory.Exists(directory))
+                    {
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(directory);
+                    }
+
+                    {
+                        Console.WriteLine("Find latest file");
+                        // Find latest file
+                        var lastFile = Directory.EnumerateFiles(directory).Max(filename => filename);
+                        LogMsg("GetLatestSaleNo " + lastFile);
+                        Console.WriteLine("GetLatestSaleNo " + lastFile);
+                        if (lastFile != null)
+                        {
+                            saleNo = Convert.ToInt64(lastFile.Substring(19, 4));
+                        }
+                        LogMsg("GetLatestSaleNo " + saleNo);
+                        Console.WriteLine("GetLatestSaleNo " + saleNo);
+                    }
+
+                    return (saleNo);
+                }
+                catch (FTPCommandException fe)
+                {
+                    LogMsg(fe);
+                    return 0;
+                }
+                catch (IOException ie)
+                {
+                    LogMsg(ie);
+                    return 0;
+                }
+                catch (IndexOutOfRangeException ie)
+                {
+                    LogMsg(ie);
+                    return 0;
+                }
+            }
+        }
+
+        
         public static string GetXMLFile(int saleid)
         {
             string Host = null;
@@ -172,7 +282,6 @@ namespace PhocasBidData
             */
 
             ulong? largest = 0;
-            int ii = 0;
 
             // Download the XML transcript and pop it into AMS...
             using (FTPSClient client = new FTPSClient())
