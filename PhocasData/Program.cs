@@ -428,6 +428,25 @@ namespace PhocasBidData
                 File.Copy(biddercsvFile, savedbiddercsvFile, true);
                 File.Copy(usercsvFile, savedusercsvFile, true);
 
+                // Tidy up any older csv files so we don't run out of disk space
+                // Go back a month
+                DateTime old = DateTime.Now.AddMonths(-1);
+                string dp = old.ToString("-yyy-MM-dd");
+                while (old.AddDays(4) < DateTime.Now)
+                {
+                    Console.WriteLine("looking for " + dp);
+                    string oldbidcsvFile = csvDataPath + "bidstats" + dp + ".csv";
+                    string oldlotcsvFile = csvDataPath + "lotstats" + dp + ".csv";
+                    string oldbiddercsvFile = csvDataPath + "bidderstats" + dp + ".csv";
+                    string oldusercsvFile = csvDataPath + "userstats" + dp + ".csv";
+                    File.Delete(oldbidcsvFile);
+                    File.Delete(oldlotcsvFile);
+                    File.Delete(oldbiddercsvFile);
+                    File.Delete(oldusercsvFile);
+                    old = old.AddDays(1);
+                    dp = old.ToString("-yyy-MM-dd");
+                }
+
                 Dictionary<int, string> processedSales = new Dictionary<int, string>();
                 processedSales = loadProcessedSales(savedbidcsvFile);
 
@@ -509,8 +528,8 @@ namespace PhocasBidData
                                 // Find the latest /  largest sale no and loop until that
                                 long latestSaleNo = FTPXML.GetLatestSaleNo();
 
-//                                for (int saleNo = 1650; saleNo < latestSaleNo; saleNo++)
-                                for (int saleNo = 1650; saleNo < 5000; saleNo++)
+                                for (int saleNo = 1650; saleNo <= latestSaleNo; saleNo++)
+//                                for (int saleNo = 1650; saleNo < 5000; saleNo++)
                                 {
                                     try
                                     {
@@ -598,26 +617,32 @@ namespace PhocasBidData
         private static Dictionary<string, string> loadProcessedUsers(string filename)
         {
             Dictionary<string, string> users = new Dictionary<string, string>();
-
-            using (var reader = new StreamReader(filename))
+            try
             {
-                while (!reader.EndOfStream)
+                using (var reader = new StreamReader(filename))
                 {
-                    var line = reader.ReadLine();
-                    var values = line.Split(',');
+                    while (!reader.EndOfStream)
+                    {
+                        var line = reader.ReadLine();
+                        var values = line.Split(',');
 
-                    try
-                    {
-                        users.Add(values[0] + "-" + values[4], line);
-                    }
-                    catch (ArgumentException de)
-                    { 
-                    }
-                    catch (Exception ee)
-                    {
-                        Console.Write("Something else went wrong " + ee.Message);
+                        try
+                        {
+                            users.Add(values[0] + "-" + values[4], line);
+                        }
+                        catch (ArgumentException de)
+                        {
+                        }
+                        catch (Exception ee)
+                        {
+                            Console.Write("Something else went wrong " + ee.Message);
+                        }
                     }
                 }
+            }
+            catch (FileNotFoundException fe)
+            {
+                Console.WriteLine("Process sales - file not found " + filename);
             }
 
             return users;
@@ -627,7 +652,7 @@ namespace PhocasBidData
         {
             Dictionary<string, string> bidders = new Dictionary<string, string>();
 
-
+            try { 
             using (var reader = new StreamReader(filename))
             {
                 while (!reader.EndOfStream)
@@ -649,6 +674,11 @@ namespace PhocasBidData
                     }
                 }
             }
+            }
+            catch (FileNotFoundException fe)
+            {
+                Console.WriteLine("Process sales - file not found " + filename);
+            }
 
             return bidders;
         }
@@ -657,7 +687,7 @@ namespace PhocasBidData
         {
             Dictionary<string, string> lots = new Dictionary<string, string>();
 
-
+            try { 
             using (var reader = new StreamReader(filename))
             {
                 while (!reader.EndOfStream)
@@ -681,6 +711,11 @@ namespace PhocasBidData
                     }
                 }
             }
+        }
+            catch (FileNotFoundException fe)
+            {
+                Console.WriteLine("Process sales - file not found " + filename);
+            }
 
             return lots;
         }
@@ -688,44 +723,52 @@ namespace PhocasBidData
         private static Dictionary<int, string> loadProcessedSales(string filename)
         {
             Dictionary<int, string> sales = new Dictionary<int, string>();
+            Console.WriteLine("Process sales " + filename);
 
-            using (var reader = new StreamReader(filename))
+            try
             {
-                while (!reader.EndOfStream)
+                using (var reader = new StreamReader(filename))
                 {
-                    var line = reader.ReadLine();
-                    var values = line.Split(',');
-
-                    int saleNo;
-                    if (Int32.TryParse(values[0], out saleNo))
+                    while (!reader.EndOfStream)
                     {
-                        DateTime saleStart;
-                        if (values.Length > 2)
+                        var line = reader.ReadLine();
+                        var values = line.Split(',');
+
+                        int saleNo;
+                        if (Int32.TryParse(values[0], out saleNo))
                         {
-                            if (DateTime.TryParse(values[2], out saleStart))
+                            DateTime saleStart;
+                            if (values.Length > 2)
                             {
-                                if (saleStart < DateTime.Today)
+                                if (DateTime.TryParse(values[2], out saleStart))
                                 {
-                                    if (saleNo > 2626)
+                                    if (saleStart < DateTime.Today)
                                     {
-                                        Console.WriteLine("Up to date");
+                                        if (saleNo > 2626)
+                                        {
+                                            Console.WriteLine("Up to date");
+                                        }
+                                        sales.Add(saleNo, line);
                                     }
-                                    sales.Add(saleNo, line);
                                 }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Date format?");
                             }
                         }
                         else
                         {
-                            Console.WriteLine("Date format?");
+                            // Ignoring parsing errors - header row etc
+                            Console.WriteLine("String could not be parsed - " + values[0].ToString());
                         }
-                    }
-                    else
-                    {
-                        // Ignoring parsing errors - header row etc
-                        Console.WriteLine("String could not be parsed - " + values[0].ToString());
-                    }
 
+                    }
                 }
+            }
+            catch (FileNotFoundException fe)
+            {
+                Console.WriteLine("Process sales - file not found " + filename);
             }
 
             return sales;
