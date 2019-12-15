@@ -117,33 +117,35 @@ namespace PhocasBidData
 
                 try
                 {
-                    string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                                @"Humboldt\AuctionController\transactionlogs\");
-                    directory = "C:\\TransactionLogs\\";
-                    // Make sure directory exists
-                    if (Directory.Exists(directory))
-                    {
-                    }
-                    else
-                    {
-                        Directory.CreateDirectory(directory);
-                    }
 
                     {
                         Console.WriteLine("Find latest file");
+
                         // Find latest file
-                        var lastFile = Directory.EnumerateFiles(directory).Max(filename => filename);
-                        LogMsg("GetLatestSaleNo " + lastFile);
+                        List<DirectoryListItem> ftpItems = client.GetDirectoryList().ToList();
+
+                        string lastFile = "";
+                        // Find latest file
+                        foreach (DirectoryListItem FtpItem in ftpItems)
+                        {
+                            if (FtpItem.Name.CompareTo(lastFile) > 0)
+                            {
+                                lastFile = FtpItem.Name;
+                            }
+                        }
+
                         Console.WriteLine("GetLatestSaleNo " + lastFile);
                         if (lastFile != null)
                         {
-                            saleNo = Convert.ToInt64(lastFile.Substring(19, 4));
+                            saleNo = Convert.ToInt64(lastFile.Substring(0, 4));
                         }
+
                         LogMsg("GetLatestSaleNo " + saleNo);
                         Console.WriteLine("GetLatestSaleNo " + saleNo);
                     }
 
-                    return (saleNo);
+                                        return (saleNo);
+                    //return (4800);
                 }
                 catch (FTPCommandException fe)
                 {
@@ -203,83 +205,6 @@ namespace PhocasBidData
             }
 
             string targetDirectory = "C:\\TransactionLogs";
-
-            // Check if we've already got the file locally
-            /*            string[] localItems = Directory.GetFiles(targetDirectory);
-                        tl = new TransactionLogs[localItems.Length];
-                        alltl = new TransactionLogs[localItems.Length];
-                        int ii = 0;
-
-                        foreach (string transactionFile in localItems)
-                        {
-                            if ((transactionFile.IndexOf("_") > -1) && (transactionFile.IndexOf("Transaction") > -1))
-                            {
-                                try
-                                {
-                                    if ((transactionFile.IndexOf("_") > -1) && (transactionFile.Length > 41))
-                                    {
-                                        // Format Date
-                                        string pattern = "yyyy-MM-dd_HH-mm-ss_";
-                                        DateTime parsedDate;
-
-                                        if (DateTime.TryParseExact(transactionFile.Substring(transactionFile.IndexOf("_") + 1, 20), pattern, null,
-                                                                    DateTimeStyles.None, out parsedDate))
-                                        {
-                                            // Check if this is today and if so skip and ftp
-                                            if (parsedDate == DateTime.Today) {
-                                                break;
-                                            }
-                                            alltl[ii].TimeRecorded = parsedDate;
-                                        }
-
-                                        alltl[ii].SaleNo = transactionFile.Substring(0, transactionFile.IndexOf("_"));
-                                        alltl[ii].Filename = transactionFile;
-
-                                        ii++;
-                                    }
-                                }
-                                catch (IOException ie)
-                                {
-                                    // Skip it for now
-                                    LogMsg(ie.Message);
-                                }
-                                catch (FormatException fe)
-                                {
-                                    // Skip it for now
-                                    LogMsg(fe.Message);
-                                }
-                                catch (IndexOutOfRangeException fe)
-                                {
-                                    // Skip it for now
-                                    LogMsg(fe.Message);
-                                }
-                                catch (Exception ee)
-                                {
-                                    // Skip it for now
-                                    LogMsg(ee.Message);
-                                }
-                            }
-                        }
-
-                        ulong? largest = 0;
-                        foreach (TransactionLogs transactionLog in alltl)
-                        {
-                            if (transactionLog.SaleNo != null)
-                            {
-                                if (transactionLog.SaleNo.IndexOf(saleid.ToString()) >= 18)
-                                {
-                                    ulong? size = (ulong?)new System.IO.FileInfo(transactionLog.Filename).Length;
-                                    if (size > largest)
-                                    {
-                                        thisone = transactionLog.Filename;
-                                        largest = size;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (thisone != "") return (thisone);
-            */
 
             ulong? largest = 0;
 
