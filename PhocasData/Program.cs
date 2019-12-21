@@ -143,11 +143,13 @@ namespace PhocasBidData
 
         private static void GeteHubData()
         {
-            String endPoint = "http://humdev.astonbarclay.net:8080/login";
-            //endPoint = "https://api2.astonbarclay.net/login";
+            //String endPoint = "http://humdev.astonbarclay.net:8080/login";
+            String endPoint = "https://api2.astonbarclay.net/appraisal/login";
             Pwd data = new Pwd();
             data.password = "P@ssw0rd";
             data.username = "AAR003c";
+            data.password = "P@ssw0rd";
+            data.username = "ehub.stats";
 
             try
             {
@@ -171,8 +173,9 @@ namespace PhocasBidData
                         bearer = values.First();
                     }
 
-                    endPoint = "http://humdev.astonbarclay.net:8080/v.1/report/from/2019-01-01/to/2019-12-31";
-                    endPoint = "https://api2.astonbarclay.net/appraisal/login/report/from/2019-05-01/to/2019-12-31";
+                    // endPoint = "http://humdev.astonbarclay.net:8080/v.1/report/from/2019-01-01/to/2019-12-31";
+
+                    endPoint = "https://api2.astonbarclay.net/appraisal/v.1/report/from/2019-05-01/to/2019-12-31";
                     HttpClient httpClientData = new HttpClient();
                     httpClientData.BaseAddress = new Uri(endPoint);
                     httpClientData.DefaultRequestHeaders.Accept.Clear();
